@@ -141,38 +141,31 @@ class t3WebdavHybridBackend extends ezcWebdavMemoryBackend {
 			$parent = dirname($path);
 			$name   = basename($path);
 			 
-			$t3io->metaftpd_devlog(1,"=== MKCOL inter : path $path : parent $parent :  name $name",'t3WebdavMemoryBackend::createCollection($path)',"MKCOL");
-			
 			// TODO: throw exeptions instead of returning simple text-messages
 			if (!$t3io->T3FileExists($parent)) 
 			{
-				$t3io->metaftpd_devlog(1,"=== MKCOL END : 409 ",'t3WebdavMemoryBackend::createCollection($path)',"MKCOL");
 				//return "409 Conflict";
 			}
 
 			if (!$t3io->T3IsDir($parent)) 
 			{
-				$t3io->metaftpd_devlog(1,"=== MKCOL END : 403 1",'t3WebdavMemoryBackend::createCollection($path)',"MKCOL");
 				//return "403 Forbidden";
 			}
 
 			if ($t3io->T3FileExists($parent."/".$name) ) 
 			{
-				$t3io->metaftpd_devlog(1,"=== MKCOL END : 405 $parent - $name",'t3WebdavMemoryBackend::createCollection($path)',"MKCOL");
 				//return "405 Method not allowed";
 			}
 
 			if (!empty($_SERVER["CONTENT_LENGTH"])) 
 			{ 	
 				// no body parsing yet
-				$t3io->metaftpd_devlog(1,"=== MKCOL END : 415",'t3WebdavMemoryBackend::createCollection($path)',"MKCOL");
 				//return "415 Unsupported media type";
 			}
 			 
 			$stat = mkdir($parent."/".$name, 0777);
 			if (!$stat) 
 			{
-				$t3io->metaftpd_devlog(1,"=== MKCOL END : 403",'t3WebdavMemoryBackend::createCollection($path)',"MKCOL");
 				//return "403 Forbidden";
 			} 
 			else 
@@ -217,7 +210,6 @@ class t3WebdavHybridBackend extends ezcWebdavMemoryBackend {
     		// in update mode we update directly tx_metaftpd_ftpfile ... (No copy)
     		// we can integrate versionning here later ...
     		$physicalFilePath=$t3io->T3CleanFilePath($this->CFG->T3PHYSICALROOTDIR.$info['filepath']);
-    		$t3io->metaftpd_devlog(6,"PUT physicalFilePath : ".$physicalFilePath,"meta_webdav","PUT");
     			
     		file_put_contents($physicalFilePath,$content);
     			
@@ -331,12 +323,10 @@ class t3WebdavHybridBackend extends ezcWebdavMemoryBackend {
     	{
     		// Web mount
     		$info['ufile']=$virtualFilePath;
-    		$t3io->metaftpd_devlog(6,"PUT info : ".serialize($info),"meta_webdav","PUT");
     			
     		// in update mode we update directly tx_metaftpd_ftpfile ... (No copy)
     		// we can integrate versionning here later ...
     		$physicalFilePath=$t3io->T3CleanFilePath($this->CFG->T3PHYSICALROOTDIR.$info['filepath']);
-    		$t3io->metaftpd_devlog(6,"PUT physicalFilePath : ".$physicalFilePath,"meta_webdav","PUT");
     			
     		file_put_contents($physicalFilePath,$content);
     			
@@ -395,23 +385,28 @@ class t3WebdavHybridBackend extends ezcWebdavMemoryBackend {
     	if ($info['isWebmount']) 
     	{
     		$arr=array('deleted'=>'1');
+    		
     		if (!$info['isWebcontent']) $this->CFG->T3DB->exec_UPDATEquery('pages',"uid='".$info['uid']."'",$arr);
     		if ($info['isWebcontent']) $this->CFG->T3DB->exec_UPDATEquery('tt_content',"uid='".$info['uid']."'",$arr);
+    		
     		$t3io->T3ClearPageCache($info['pid']);
     		$t3io->T3ClearAllCache();
     	} 
     	else 
     	{
     		// File mount
-    		if (!$t3io->T3FileExists($path)) {
+    		if (!$t3io->T3FileExists($path)) 
+    		{
     			$error[] = new ezcWebdavErrorResponse(
     				ezcWebdavResponse::STATUS_404,
     				$name
     			);
     		}
+    		
     		$path=$t3io->T3MakeFilePath($path);
 
-    		if ($t3io->T3IsDir($path)) {
+    		if ($t3io->T3IsDir($path)) 
+    		{
     			$query = "DELETE FROM {$this->db_prefix}properties WHERE path LIKE '".$this->_slashify($path)."%'";
     			$this->CFG->T3DB->exec_DELETEquery('tx_metaftpd_webdav_properties',"path LIKE '".$this->_slashify($path)."%'");
     			
@@ -425,6 +420,7 @@ class t3WebdavHybridBackend extends ezcWebdavMemoryBackend {
     		{
     			unlink($path);
     		}
+    		
     		$query = "DELETE FROM {$this->db_prefix}properties WHERE path = '$path'";
     		$this->CFG->T3DB->exec_DELETEquery('tx_metaftpd_webdav_properties',"path = '$path'");
     	}
