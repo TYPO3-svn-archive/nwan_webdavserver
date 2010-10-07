@@ -15,8 +15,7 @@ require_once 'backends/class.t3WebdavHybridBackend.php';
 
 $webdav = new nwan_webdavserver($CFG);
 
-class nwan_webdavserver 
-{
+class nwan_webdavserver {
 	
 	private $ezcServer;
 	private $ezcPathFactory;
@@ -31,10 +30,13 @@ class nwan_webdavserver
 	
 	function __construct($CFG)
 	{
+		$this->CFG = $CFG;
+		
+		// get some base info
+		$this->CFG->t3io->metaftpd_devlog(1,'$_SERVER:'.print_r($_SERVER, true) ,basename(__FILE__).':'.__LINE__,"ServeRequest");
 		
         // init typo3 user, use for authorisation
-		$this->t3Auth = new  t3Auth($CFG);
-        $this->CFG = $this->t3Auth->initT3User($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
+		$this->t3Auth = new t3Auth($this->CFG);
 		
         // init webdav server
 		$this->ezcServer = ezcWebdavServer::getInstance();
@@ -43,55 +45,68 @@ class nwan_webdavserver
         // init base path
 		$this->base = (@$_SERVER["HTTPS"] === "on" ? "https:" : "http:").'//'.$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME'];
 		$this->ezcPathFactory = new ezcWebdavBasicPathFactory($this->base);		
-		foreach ( $this->ezcServer->configurations as $conf )
-		{
+		foreach ( $this->ezcServer->configurations as $conf ){
 		    $conf->pathFactory = $this->ezcPathFactory;
 		}
 		
 		// init virtual path to typo3-memory
 		$t3path = str_replace($_SERVER['SCRIPT_NAME'], '', $_SERVER['REQUEST_URI']);
-		if($t3path=='')
-			$t3path = '/';
-
-		// init memory backend
-		switch(strpos($t3path, 'FILEMOUNTS')>0)
-		{
-//			case true:
-//			case '1':
-//				$this->t3Backend = new ezcWebdavFileBackend('/Users/andreas/Sites/dummy-4.3.3/fileadmin');
-//				break;
-			
-			default:
-				
-				$this->t3Backend = new t3WebdavHybridBackend($this->CFG);
-
-				// get curr dir's contents
-				$this->t3CurrDir = array();
-				$_currDirContents = $this->CFG->t3io->T3ListDir($t3path);
-				
-				//turn every leaf into a collection
-				foreach($_currDirContents as $_node )
-				{ 			
-					$this->CFG->t3io->metaftpd_devlog(5,'->$_node:'.$t3path.$_node ,'nwan_webdavserver::__construct($CFG)',"ServeRequest");
-					$this->t3CurrDir[$_node] = $this->CFG->t3io->T3IsDir($t3path.$_node) ? array() :$_node;
-				}
-				
-				// append the curr dir to the whole path
-				foreach(array_reverse(explode('/', $t3path)) as $_treenode)
-				{		
-					if($_treenode != '' && !isset($this->t3CurrDir[$_treenode]))
-					{ 		
-						$$_treenode = array($_treenode => $this->t3CurrDir);
-						$this->t3CurrDir = $$_treenode;
-					}
-				}
 		
-				// add contents to backend
-				$this->t3Backend->addContents(
-					$this->t3CurrDir
-				);
-						
+		$t3path = preg_replace('/^\//','',$t3path);
+		
+		switch($t3path)
+		{
+				// Windows, Linux
+			case '':
+			case '/':
+				// Finder (MAC OS X)
+			case '._.':
+			case '/._.':
+				$t3path = '/';
+				break;
+				
+//			default:
+//				$t3path = preg_replace('/\/$/','',$t3path);
+//				break;
+		}			
+
+		// init backend				
+		$this->t3Backend = new t3WebdavHybridBackend($this->CFG);
+
+		$this->CFG->t3io->metaftpd_devlog(5,'$t3path:'.print_r($t3path, true) ,basename(__FILE__).':'.__LINE__,"ServeRequest");
+
+		// get curr dir's contents
+		$this->t3CurrDir = array();
+		$_currDirContents = $this->CFG->t3io->T3ListDir($t3path);
+		$this->CFG->t3io->metaftpd_devlog(5,'$_currDirContents:'.print_r($_currDirContents, true) ,basename(__FILE__).':'.__LINE__,"ServeRequest");
+		
+		if(is_array($_currDirContents))
+		{
+			//turn every leaf into a collection
+			foreach($_currDirContents as $_node )
+			{	
+				$this->CFG->t3io->metaftpd_devlog(5,'->$_node:'.$t3path.$_node ,basename(__FILE__).':'.__LINE__,"ServeRequest");
+				// TODO: BUGFIX needed here: t3io->T3MakeFilePath!!!
+				$this->t3CurrDir[$_node] = $this->CFG->t3io->T3IsDir($t3path.$_node) ? array() : $_node;
+			}
 		}
+		
+		$this->CFG->t3io->metaftpd_devlog(5,'$this->t3CurrDir:'.print_r($this->t3CurrDir, true) ,basename(__FILE__).':'.__LINE__,"ServeRequest");
+		
+		// append the curr dir to the whole path
+		foreach(array_reverse(explode('/', $t3path)) as $_treenode){
+			
+			if($_treenode != '' && !isset($this->t3CurrDir[$_treenode])){ 		
+				$$_treenode = array($_treenode => $this->t3CurrDir);
+				$this->t3CurrDir = $$_treenode;
+			}
+		}
+
+		// add contents to backend
+		$this->CFG->t3io->metaftpd_devlog(5,'$this->t3CurrDir:'.print_r($this->t3CurrDir, true) ,basename(__FILE__).':'.__LINE__,"ServeRequest");
+		$this->t3Backend->addContents(
+			$this->t3CurrDir
+		);
 		
 		// wait for requests
 		$this->ezcServer->handle( $this->t3Backend ); 
