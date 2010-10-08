@@ -68,7 +68,7 @@ implements ezcWebdavAuthorizer
 		{
 			list($username, $password) = each($this->credentials);
 			
-			$this->CFG->t3io->T3Authenticate($username,$password);
+			$this->CFG->t3io->T3Identify($username);
 			
 			return true;
 		}
@@ -82,14 +82,15 @@ implements ezcWebdavAuthorizer
 		// ezcWebdav fetches authorisation for every path-segment,
 		// but we did this already while building the initial content-tree
 		// TODO: fetch fine grained rights from typo3 (read, write, list etc)
+		$this->CFG->t3io->metaftpd_devlog(1,print_r(array($user, $path, $access),1),basename(__FILE__).':'.__LINE__,'T3Authenticate');
 		return true;
 	}
 	
 	/**
 	 * Calculates the digest according to $data and $password and checks it.
 	 * 
-	 * As TYPO3 aleady BEUser's passwords md5-encrypted, we can't build the $ha1 string accordingly.
-	 * Only soolution is to store the whole $ha1-string ("user:realm:password") in the TYPO_DB.
+	 * As TYPO3 already stores BEUser's passwords md5-encrypted, we can't build the $ha1 string accordingly.
+	 * Only solution is to store the whole $ha1-string ("user:realm:password") in the TYPO_DB.
 	 * TODO: create BE-Modul, extend the TCA, configure the realm via flexform
 	 * 
 	 * @param ezcWebdavDigestAuth $data

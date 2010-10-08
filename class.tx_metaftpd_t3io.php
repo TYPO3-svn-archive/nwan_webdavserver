@@ -70,8 +70,28 @@ function T3Authenticate($username,$password,$crypt="md5")
 			    break;
 	 }
 	 
-	 // We check if BE User exists in TYPO3 DB, // What about FE Users ?
-	 $res=$this->CFG->T3DB->exec_SELECTquery('uid,usergroup','be_users',"be_users.username='$username' and be_users.password='$pass'");
+	 $auth = $this->T3Identify($username, $checkPassword=true, $pass);
+	
+	$this->metaftpd_devlog(1,"T3Authenticate returns: {$auth}",basename(__FILE__).':'.__LINE__,'T3Authenticate');
+	
+	return $auth;  
+}
+
+function T3Identify($username, $checkPassword=false, $password=null)
+{
+	$this->metaftpd_devlog(1,"T3Identify:".$username,basename(__FILE__).':'.__LINE__,'T3Authenticate');
+	
+	// We check if BE User exists in TYPO3 DB, // What about FE Users ?
+	 $res=$this->CFG->T3DB->exec_SELECTquery
+	 (
+	 	'uid,usergroup,password',
+	 	'be_users',
+	 	// TODO: ask also for start- and stop-dates
+	 	'be_users.username="'.$username.'" and be_users.deleted=0 and be_users.disable=0',
+	 	'',
+	 	'',
+	 	1
+	 );
 	 
 	 if ($res) 
 	 {
@@ -81,31 +101,42 @@ function T3Authenticate($username,$password,$crypt="md5")
 
 			// We get user info from database
 			$userinfo = mysql_fetch_assoc($res);
-
-			// unique ID
-			$this->user_uid = $userinfo['uid'];
 			
-			// Group ID
-			$this->user_gid = $userinfo['usergroup'];
-	 		$new_BE_USER = t3lib_div::makeInstance("t3lib_beUserAuth");     // New backend user object
-      		$new_BE_USER->OS = TYPO3_OS;
-		
-			// We create BE USER
-			$new_BE_USER->setBeUserByUid($this->user_uid);
-			$new_BE_USER->fetchGroupData();
-			$this->BEUSER=$new_BE_USER;
+			// if requested, check authentication
+			if(
+				$checkPassword
+				&& $userinfo['password']!=$password
+			)
+			{
+				$auth = false;
+			}
+			else
+			{
+				// unique ID
+				$this->user_uid = $userinfo['uid'];
+				
+				// Group ID
+				$this->user_gid = $userinfo['usergroup'];
+		 		$new_BE_USER = t3lib_div::makeInstance("t3lib_beUserAuth");     // New backend user object
+	      		$new_BE_USER->OS = TYPO3_OS;
 			
-			$FILEMOUNTS=$this->BEUSER->groupData['filemounts'];
-			$WEBMOUNTS=$this->BEUSER->groupData['webmounts'];
-
-			$this->metaftpd_devlog(1,"user_uid: {$this->user_uid} , FILEMOUNTS: ".print_r($FILEMOUNTS,1).", WEBMOUNTSâ: {$WEBMOUNTS}",basename(__FILE__).':'.__LINE__,'T3Authenticate');
-			
-			$T3EXTFILE=t3lib_div::makeInstance('t3lib_extFileFunctions');
-	 		$T3EXTFILE->init($FILEMOUNTS, $TYPO3_CONF_VARS['BE']['fileExtensions']); // CBY get it from connected user
-	 		$T3EXTFILE->init_actionPerms(1); // CBY get it from connected user
-	 		$this->T3FILE=$T3EXTFILE;
-			
-	 		$auth=true;
+				// We create BE USER
+				$new_BE_USER->setBeUserByUid($this->user_uid);
+				$new_BE_USER->fetchGroupData();
+				$this->BEUSER=$new_BE_USER;
+				
+				$FILEMOUNTS=$this->BEUSER->groupData['filemounts'];
+				$WEBMOUNTS=$this->BEUSER->groupData['webmounts'];
+	
+				$this->metaftpd_devlog(1,"user_uid: {$this->user_uid} , FILEMOUNTS: ".print_r($FILEMOUNTS,1).", WEBMOUNTS: {$WEBMOUNTS}",basename(__FILE__).':'.__LINE__,'T3Authenticate');
+				
+				$T3EXTFILE=t3lib_div::makeInstance('t3lib_extFileFunctions');
+		 		$T3EXTFILE->init($FILEMOUNTS, $TYPO3_CONF_VARS['BE']['fileExtensions']); // CBY get it from connected user
+		 		$T3EXTFILE->init_actionPerms(1); // CBY get it from connected user
+		 		$this->T3FILE=$T3EXTFILE;
+				
+		 		$auth=true;
+			}
     	} 	
     	else 
     	{
@@ -116,10 +147,7 @@ function T3Authenticate($username,$password,$crypt="md5")
 	{
 		$this->metaftpd_devlog(1,"T3Authenticate : auth failed with db",basename(__FILE__).':'.__LINE__,'T3Authenticate');
 	}
-	
-	$this->metaftpd_devlog(1,"T3Authenticate returns: {$auth}",basename(__FILE__).':'.__LINE__,'T3Authenticate');
-	
-	return $auth;  
+	return $auth;
 }
 	
 // this function gets PID from directoryname
@@ -1354,6 +1382,8 @@ function T3ListDir($path)
 		} 
 		elseif ($path=='/'.T3_FTPD_FILE_ROOT.'/') 
 		{
+			$this->metaftpd_devlog(1,'$this->BEUSER: '.print_r($this->BEUSER, 1),basename(__FILE__).':'.__LINE__,'T3ListDir');
+			
 			$filemounts=$this->BEUSER->groupData['filemounts'];
 			$this->metaftpd_devlog(1,"============ T3ListDir filemounts 2:".serialize($filemounts),'meta_t3io','T3ListDir');
 			foreach($filemounts as $fm) 

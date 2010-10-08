@@ -52,29 +52,34 @@ class nwan_webdavserver {
 		// init virtual path to typo3-memory
 		$t3path = str_replace($_SERVER['SCRIPT_NAME'], '', $_SERVER['REQUEST_URI']);
 		
-		$t3path = preg_replace('/^\//','',$t3path);
+		$this->CFG->t3io->metaftpd_devlog(5,'$t3path-1:'.print_r($t3path, true) ,basename(__FILE__).':'.__LINE__,"ServeRequest");
 		
-		switch($t3path)
-		{
-				// Windows, Linux
-			case '':
-			case '/':
-				// Finder (MAC OS X)
-			case '._.':
-			case '/._.':
-				$t3path = '/';
-				break;
-				
-//			default:
-//				$t3path = preg_replace('/\/$/','',$t3path);
-//				break;
-		}			
+		if(
+			strpos($t3path, '/'.T3_FTPD_FILE_ROOT)!==0
+			&& strpos($t3path, '/'.T3_FTPD_WWW_ROOT)!==0
+		){
+			$t3path = '/';
+		}
 
 		// init backend				
 		$this->t3Backend = new t3WebdavHybridBackend($this->CFG);
 
-		$this->CFG->t3io->metaftpd_devlog(5,'$t3path:'.print_r($t3path, true) ,basename(__FILE__).':'.__LINE__,"ServeRequest");
+		$this->CFG->t3io->metaftpd_devlog(5,'$t3path-2:'.print_r($t3path, true) ,basename(__FILE__).':'.__LINE__,"ServeRequest");
 
+		// identify current user
+		if($_SERVER['PHP_AUTH_DIGEST'])
+		{
+			preg_match('/username="([^"]*)"/', $_SERVER['PHP_AUTH_DIGEST'], $match_username);
+			$this->CFG->t3io->metaftpd_devlog(5,'$match_username:'.print_r($match_username, true) ,basename(__FILE__).':'.__LINE__,"ServeRequest");
+			
+			$username = $match_username[1];
+		}
+		else 
+		{
+			$username = $_SERVER['PHP_AUTH_USER'];
+		}
+		$this->CFG->t3io->T3Identify($username);
+		
 		// get curr dir's contents
 		$this->t3CurrDir = array();
 		$_currDirContents = $this->CFG->t3io->T3ListDir($t3path);
