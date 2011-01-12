@@ -333,7 +333,8 @@ function T3IsFile($virtualpath) {
 				$enable=$GLOBALS['TSFE']->sys_page->enableFields('tt_content',-1,array('fe_group'=>1));
 				$res=$this->CFG->T3DB->exec_SELECTquery('uid,ctype,header,bodytext,tstamp,tx_metaftpd_ftpfile,date','tt_content',"pid='".intval($fileinfo['pid'])."' and uid='".intval($fileinfo['uid'])."' ".$enable );
 				$this->metaftpd_devlog(4,"T3IsFile : SQL ,".$this->CFG->T3DB->SELECTquery('uid,ctype,header,bodytext,tstamp,date','tt_content',"pid='".intval($fileinfo['pid'])."' and uid='".intval($fileinfo['uid'])."' ".$enable ),'meta_t3io','T3IsFile');
-				if ($res) {
+				if ($res) 
+				{
 					while ($row=$this->CFG->T3DB->sql_fetch_assoc($res)) {
 						$fileinfo['isWebcontent']=1;
 						
@@ -362,15 +363,19 @@ function T3IsFile($virtualpath) {
 							$fileinfo['size']=0;
 							break;
 						}		
-						if ($row['tx_metaftpd_ftpfile']) {
+						
+						if ($row['tx_metaftpd_ftpfile']) 
+						{
 							$fileinfo['tx_metaftpd_ftpfile']=$fileinfo['pid'].'/'.$row['tx_metaftpd_ftpfile'];
 							
-							//TODO
 							$physicalpath=	$this->T3CleanFilePath($this->T3MakeFilePath($this->CFG->T3PHYSICALROOTDIR.'uploads/tx_metaftpd/'.$fileinfo['tx_metaftpd_ftpfile']));
-							$fileinfo['size']=filesize($physicalpath);
-							$this->metaftpd_devlog(1,"T3IsFile : path  $path : ".	$fileinfo['size'],'meta_t3io','T3IsFile');
-							$fileinfo['cdate']=$this->T3FileCTimeI($physicalpath,$fileinfo);
-							$fileinfo['mdate']=$this->T3FileMTimeI($physicalpath,$fileinfo);;
+							if(file_exists($physicalpath))
+							{
+								$fileinfo['size']=filesize($physicalpath);
+								$this->metaftpd_devlog(1,"T3IsFile : path  $path : ".	$fileinfo['size'],'meta_t3io','T3IsFile');
+								$fileinfo['cdate']=$this->T3FileCTimeI($physicalpath,$fileinfo);
+								$fileinfo['mdate']=$this->T3FileMTimeI($physicalpath,$fileinfo);;
+							}
 						}
 					}
 				} else {
@@ -1460,4 +1465,3 @@ return $text;
 	if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/meta_ftpd/class.tx_metaftpd_t3io.php'])	{
 	include_once($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/meta_ftpd/class.tx_metaftpd_t3io.php']);
 }
-?>

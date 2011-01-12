@@ -1,46 +1,55 @@
 <?
-date_default_timezone_set('Europe/Berlin');
-
-define('DS', DIRECTORY_SEPARATOR);
-define('PS', PATH_SEPARATOR);
-define('NWAN_DEBUGURL', '192.168.2.101');
-define('NWAN_DEBUGMODE', 'ON');
-define('CANDEBUG', ($_SERVER['REMOTE_ADDR']==NWAN_DEBUGURL && NWAN_DEBUGMODE=='ON') );
-
-
-require_once dirname(__FILE__)."/config.php";
-require_once 'tutorial_autoload.php';
-require_once 'custom_auth.php';
-require_once 'backends/class.t3WebdavHybridBackend.php';
-
-$webdav = new nwan_webdavserver($CFG);
-
-class nwan_webdavserver {
+class nwWebdavServer {
+	
+	protected static $instance;
 	
 	private $ezcServer;
 	private $ezcPathFactory;
 	
+	private $nwBackend;
+	private $nwAuth;
+	
+	private $t3Path;
 	private $t3CurrDir = array();
-	private $t3ContentLeaves;
-	private $t3Backend;
-	private $t3Auth;
+	private $encode_t3CurrDirNodes = false;
 	
 	private $CFG;
 	private $base;
 	
-	function __construct($CFG)
+	public static function getInstance($CFG)
 	{
+		if(self::$instance === null)
+		{
+			self::$instance = new nwWebdavServer();
+			self::$instance->init($CFG);
+		}
+		return self::$instance;
+	}
+	
+	protected function __construct()
+	{
+		
+		$this->nwAuth = new nwWebdavAuth();
+		
+		$this->ezcServer = ezcWebdavServer::getInstance();
+		 
+	}
+	
+	protected function init($CFG)
+	{
+		// some remains of tx_meta_ftpd...
+		define('T3_FTPD_WWW_ROOT','WEBMOUNTS');
+		define('T3_FTPD_FILE_ROOT','FILEMOUNTS');
 		$this->CFG = $CFG;
 		
 		// get some base info
 		$this->CFG->t3io->metaftpd_devlog(1,'$_SERVER:'.print_r($_SERVER, true) ,basename(__FILE__).':'.__LINE__,"ServeRequest");
 		
-        // init typo3 user, use for authorisation
-		$this->t3Auth = new t3Auth($this->CFG);
+        // init user, use for authorisation
+		$this->CFG = $this->nwAuth->CFG = $this->CFG;
 		
         // init webdav server
-		$this->ezcServer = ezcWebdavServer::getInstance();
-		$this->ezcServer->auth = $this->t3Auth;
+		$this->ezcServer->auth = $this->nwAuth;
 		
         // init base path
 		$this->base = (@$_SERVER["HTTPS"] === "on" ? "https:" : "http:").'//'.$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME'];
@@ -50,23 +59,21 @@ class nwan_webdavserver {
 		}
 		
 		// init virtual path to typo3-memory
-		$t3path = str_replace($_SERVER['SCRIPT_NAME'], '', $_SERVER['REQUEST_URI']);
-		
-		$this->CFG->t3io->metaftpd_devlog(5,'$t3path-1:'.print_r($t3path, true) ,basename(__FILE__).':'.__LINE__,"ServeRequest");
-		
+		$this->t3Path = str_replace($_SERVER['SCRIPT_NAME'], '', $_SERVER['REQUEST_URI']);
 		if(
-			strpos($t3path, '/'.T3_FTPD_FILE_ROOT)!==0
-			&& strpos($t3path, '/'.T3_FTPD_WWW_ROOT)!==0
-		){
-			$t3path = '/';
+			// TODO: t3lib_div::isFirstPartOfString($this->t3Path, '/'.T3_FTPD_FILE_ROOT)
+			strpos($this->t3Path, '/'.T3_FTPD_FILE_ROOT)!==0
+			&& strpos($this->t3Path, '/'.T3_FTPD_WWW_ROOT)!==0
+		)
+		{
+			$this->t3Path = '/';
 		}
-
+		
 		// init backend				
-		$this->t3Backend = new t3WebdavHybridBackend($this->CFG);
+		$this->nwBackend = new nwWebdavBackend($this->CFG);
 
-		$this->CFG->t3io->metaftpd_devlog(5,'$t3path-2:'.print_r($t3path, true) ,basename(__FILE__).':'.__LINE__,"ServeRequest");
-
-		// identify current user
+		// init typo3 user, use for vfs-setup
+		// TODO: create t3User-Class, use ezcCache to store userdetails 
 		if($_SERVER['PHP_AUTH_DIGEST'])
 		{
 			preg_match('/username="([^"]*)"/', $_SERVER['PHP_AUTH_DIGEST'], $match_username);
@@ -80,9 +87,13 @@ class nwan_webdavserver {
 		}
 		$this->CFG->t3io->T3Identify($username);
 		
+		$this->t3CurrDir = array();	
+	}
+	
+	public function serve()
+	{
 		// get curr dir's contents
-		$this->t3CurrDir = array();
-		$_currDirContents = $this->CFG->t3io->T3ListDir($t3path);
+		$_currDirContents = $this->CFG->t3io->T3ListDir($this->t3Path);
 		$this->CFG->t3io->metaftpd_devlog(5,'$_currDirContents:'.print_r($_currDirContents, true) ,basename(__FILE__).':'.__LINE__,"ServeRequest");
 		
 		if(is_array($_currDirContents))
@@ -90,16 +101,15 @@ class nwan_webdavserver {
 			//turn every leaf into a collection
 			foreach($_currDirContents as $_node )
 			{	
-				$this->CFG->t3io->metaftpd_devlog(5,'->$_node:'.$t3path.$_node ,basename(__FILE__).':'.__LINE__,"ServeRequest");
-				// TODO: BUGFIX needed here: t3io->T3MakeFilePath!!!
-				$this->t3CurrDir[$_node] = $this->CFG->t3io->T3IsDir($t3path.$_node) ? array() : $_node;
+				$this->CFG->t3io->metaftpd_devlog(5,'->$_node:'.$this->t3Path.$_node ,basename(__FILE__).':'.__LINE__,"ServeRequest");
+				$this->t3CurrDir[$this->nodeEncode($_node)] = $this->CFG->t3io->T3IsDir($this->t3Path.$_node) ? array() : $this->nodeEncode($_node);
 			}
 		}
 		
 		$this->CFG->t3io->metaftpd_devlog(5,'$this->t3CurrDir:'.print_r($this->t3CurrDir, true) ,basename(__FILE__).':'.__LINE__,"ServeRequest");
 		
 		// append the curr dir to the whole path
-		foreach(array_reverse(explode('/', $t3path)) as $_treenode){
+		foreach(array_reverse(explode('/', $this->t3Path)) as $_treenode){
 			
 			if($_treenode != '' && !isset($this->t3CurrDir[$_treenode])){ 		
 				$$_treenode = array($_treenode => $this->t3CurrDir);
@@ -109,12 +119,25 @@ class nwan_webdavserver {
 
 		// add contents to backend
 		$this->CFG->t3io->metaftpd_devlog(5,'$this->t3CurrDir:'.print_r($this->t3CurrDir, true) ,basename(__FILE__).':'.__LINE__,"ServeRequest");
-		$this->t3Backend->addContents(
+		$this->nwBackend->addContents(
 			$this->t3CurrDir
 		);
 		
 		// wait for requests
-		$this->ezcServer->handle( $this->t3Backend ); 
+		$this->ezcServer->handle( $this->nwBackend );
+	}
+	
+	/**
+	 * Enter description here ...
+	 * @param string $t3ListDir_node
+	 */
+	private function nodeEncode($t3ListDir_node)
+	{
+		if($this->encode_t3CurrDirNodes === true)
+		{
+			return rawurlencode($t3ListDir_node);
+		}
+		
+		return $t3ListDir_node;
 	}
 }
-?>

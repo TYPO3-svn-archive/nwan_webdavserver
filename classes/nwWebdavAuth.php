@@ -1,19 +1,55 @@
 <?php
 
-class t3Auth extends ezcWebdavDigestAuthenticatorBase
+class nwWebdavAuth extends ezcWebdavDigestAuthenticatorBase
 implements ezcWebdavAuthorizer
 {
-	private $CFG;
+	protected $properties = array(
+		'CFG' => null
+	);
 	protected $credentials = array();
 	
-	function __construct(&$_CFG){
-		
-		$this->CFG = $_CFG;
+	function __construct(){}
+	
+	public function __get($propertyName)
+	{
+		if ( $this->__isset($propertyName) === true )
+		{
+			return $this->properties[$propertyName];
+		}
+		throw new ezcBasePropertyNotFoundException($propertyName);
 	}
 	
-	public function getCFG(){
-		return $this->CFG;
+	public function __set($propertyName, $propertyValue)
+	{
+		switch( $propertyName)
+		{
+			case 'CFG':
+				if(
+					!$propertyValue->t3io
+					|| is_a($propertyValue->t3io, 'tx_metaftpd_t3io') === false
+				)
+				{
+					throw new ezcBaseValueException($propertyName, $propertyValue, 'tx_metaftpd_t3io not found');
+				}
+				break;
+			default:
+				throw new ezcBasePropertyNotFoundException($propertyName);
+		}
+		$this->properties[$propertyName] = $propertyValue;
 	}
+	
+	public function __isset($propertyName)
+	{
+		return array_key_exists(
+			$propertyName,
+			$this->properties
+		);
+	}
+	
+//	public function getCFG()
+//	{
+//		return $this->CFG;
+//	}
 
 	public function authenticateAnonymous( ezcWebdavAnonymousAuth $data )
 	{
@@ -82,7 +118,7 @@ implements ezcWebdavAuthorizer
 		// ezcWebdav fetches authorisation for every path-segment,
 		// but we did this already while building the initial content-tree
 		// TODO: fetch fine grained rights from typo3 (read, write, list etc)
-		$this->CFG->t3io->metaftpd_devlog(1,print_r(array($user, $path, $access),1),basename(__FILE__).':'.__LINE__,'T3Authenticate');
+		$this->CFG->t3io->metaftpd_devlog(5,print_r(array($user, $path, $access),1),basename(__FILE__).':'.__LINE__,'T3Authenticate');
 		return true;
 	}
 	
@@ -118,4 +154,3 @@ implements ezcWebdavAuthorizer
         return $digest === $data->response;
     }
 }
-?>
