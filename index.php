@@ -12,4 +12,5 @@ require_once 'autoload.php';
 
 $webdav = nwWebdavServer::getInstance($CFG);
 $webdav->serve();
+
 ob_end_flush();

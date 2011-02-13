@@ -178,8 +178,17 @@ $CFG->dbpass 			= TYPO3_db_password;
 $CFG->dbhost 			= TYPO3_db_host;
 $CFG->dbname 			= TYPO3_db;
 $CFG->dbtype			= "mysql";
-$CFG->debuglevel		= array(5);
-$CFG->debugfunction		= array('ServeRequest', 'T3Authenticate');
+$CFG->debuglevel		= array('1');
+$CFG->debugfunction		= array(
+//	'T3ListDir', 
+//	'T3ReplaceMountPointsByPath', 
+//	'isT3', 
+//	'T3MakeFilePath', 
+	'T3IsDir', 
+//	'T3GetFileMount',
+	'serve',
+	'processURL'
+);
 $CFG->T3PAGE			= $TYPO3_PAGE;
 $CFG->T3DB				= $TYPO3_DB;
 $CFG->T3TCE				= $TYPO3_TCE;

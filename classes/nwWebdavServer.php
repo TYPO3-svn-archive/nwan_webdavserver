@@ -11,7 +11,7 @@ class nwWebdavServer {
 	
 	private $t3Path;
 	private $t3CurrDir = array();
-	private $encode_t3CurrDirNodes = false;
+	private $encode_t3CurrDirNodes = true;
 	
 	private $CFG;
 	private $base;
@@ -43,7 +43,7 @@ class nwWebdavServer {
 		$this->CFG = $CFG;
 		
 		// get some base info
-		$this->CFG->t3io->metaftpd_devlog(1,'$_SERVER:'.print_r($_SERVER, true) ,basename(__FILE__).':'.__LINE__,"ServeRequest");
+		$this->CFG->t3io->metaftpd_devlog(1,"init(%CFG)" ,__METHOD__, get_defined_vars());
 		
         // init user, use for authorisation
 		$this->CFG = $this->nwAuth->CFG = $this->CFG;
@@ -59,15 +59,7 @@ class nwWebdavServer {
 		}
 		
 		// init virtual path to typo3-memory
-		$this->t3Path = str_replace($_SERVER['SCRIPT_NAME'], '', $_SERVER['REQUEST_URI']);
-		if(
-			// TODO: t3lib_div::isFirstPartOfString($this->t3Path, '/'.T3_FTPD_FILE_ROOT)
-			strpos($this->t3Path, '/'.T3_FTPD_FILE_ROOT)!==0
-			&& strpos($this->t3Path, '/'.T3_FTPD_WWW_ROOT)!==0
-		)
-		{
-			$this->t3Path = '/';
-		}
+		$this->t3Path = $this->processURL($_SERVER['REQUEST_URI']);
 		
 		// init backend				
 		$this->nwBackend = new nwWebdavBackend($this->CFG);
@@ -92,36 +84,60 @@ class nwWebdavServer {
 	
 	public function serve()
 	{
-		// get curr dir's contents
-		$_currDirContents = $this->CFG->t3io->T3ListDir($this->t3Path);
-		$this->CFG->t3io->metaftpd_devlog(5,'$_currDirContents:'.print_r($_currDirContents, true) ,basename(__FILE__).':'.__LINE__,"ServeRequest");
+		$this->CFG->t3io->metaftpd_devlog(1,'()' ,__METHOD__, array($this->t3Path) );
 		
-		if(is_array($_currDirContents))
+		$pass1 = $this->CFG->t3io->isT3($this->t3Path);
+		$this->CFG->t3io->metaftpd_devlog(1,'$path isT3 ?' ,__METHOD__, $pass1);
+		
+		if( $pass1['isWebmount'] || $pass1['isFilemount'] )
 		{
-			//turn every leaf into a collection
-			foreach($_currDirContents as $_node )
-			{	
-				$this->CFG->t3io->metaftpd_devlog(5,'->$_node:'.$this->t3Path.$_node ,basename(__FILE__).':'.__LINE__,"ServeRequest");
-				$this->t3CurrDir[$this->nodeEncode($_node)] = $this->CFG->t3io->T3IsDir($this->t3Path.$_node) ? array() : $this->nodeEncode($_node);
+			$pass2 = $this->CFG->t3io->T3IsDir($this->t3Path);
+			
+			$this->CFG->t3io->metaftpd_devlog(1,'$path is a dir ?' ,__METHOD__, array('$pass2'=>$pass2));
+			
+			if( $pass2 )
+			{
+				$this->t3Path = $this->CFG->t3io->_slashify($this->t3Path);
 			}
 		}
 		
-		$this->CFG->t3io->metaftpd_devlog(5,'$this->t3CurrDir:'.print_r($this->t3CurrDir, true) ,basename(__FILE__).':'.__LINE__,"ServeRequest");
+		if(substr($this->t3Path, -1) == DS)
+		{
 		
-		// append the curr dir to the whole path
-		foreach(array_reverse(explode('/', $this->t3Path)) as $_treenode){
+			// get curr dir's contents
+			$_currDirContents = $this->CFG->t3io->T3ListDir($this->t3Path);
 			
-			if($_treenode != '' && !isset($this->t3CurrDir[$_treenode])){ 		
-				$$_treenode = array($_treenode => $this->t3CurrDir);
-				$this->t3CurrDir = $$_treenode;
+			if(is_array($_currDirContents))
+			{
+				//turn every leaf into a collection
+				foreach($_currDirContents as $_node )
+				{	
+	//				$this->CFG->t3io->metaftpd_devlog(1,'foreach($_currDirContents as $_node )' ,__METHOD__, get_defined_vars());
+					$this->t3CurrDir[$this->nodeEncode($_node)] = $this->CFG->t3io->T3IsDir($this->t3Path.$_node) ? array() : $this->nodeEncode($_node);
+				}
+			}
+			
+			$this->CFG->t3io->metaftpd_devlog(1,'just built $this->t3CurrDir:',__METHOD__, get_defined_vars());
+			
+			// append the curr dir to the whole path
+			foreach(array_reverse(explode('/', $this->t3Path)) as $_treenode){
+				
+				if($_treenode != '' && !isset($this->t3CurrDir[$_treenode])){ 		
+					$$_treenode = array($_treenode => $this->t3CurrDir);
+					$this->t3CurrDir = $$_treenode;
+				}
 			}
 		}
 
 		// add contents to backend
-		$this->CFG->t3io->metaftpd_devlog(5,'$this->t3CurrDir:'.print_r($this->t3CurrDir, true) ,basename(__FILE__).':'.__LINE__,"ServeRequest");
+		$this->CFG->t3io->metaftpd_devlog(1,'just appended $this->t3CurrDir:',__METHOD__, get_object_vars($this));
+		
 		$this->nwBackend->addContents(
 			$this->t3CurrDir
 		);
+		
+		// ensure a clean output
+		ob_clean(); 
 		
 		// wait for requests
 		$this->ezcServer->handle( $this->nwBackend );
@@ -140,4 +156,22 @@ class nwWebdavServer {
 		
 		return $t3ListDir_node;
 	}
+	
+	protected function processURL( $url )
+	{
+		$processedUrl = str_replace($_SERVER['SCRIPT_NAME'], '', $url);
+		
+		if(
+			// TODO: t3lib_div::isFirstPartOfString($this->t3Path, '/'.T3_FTPD_FILE_ROOT)
+			strpos($processedUrl, '/'.T3_FTPD_FILE_ROOT)!==0
+			&& strpos($processedUrl, '/'.T3_FTPD_WWW_ROOT)!==0
+		)
+		{
+			$processedUrl = DS;
+		}
+		
+		$this->CFG->t3io->metaftpd_devlog(1,'',__METHOD__, get_defined_vars());
+		
+		return $processedUrl;
+	} 
 }
