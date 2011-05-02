@@ -56,7 +56,7 @@ function T3Init(&$CFG) {
 
 function T3Authenticate($username,$password,$crypt="md5") 
 {
-	$this->metaftpd_devlog(2,'$username:'.$username,basename(__FILE__).':'.__LINE__,'T3Authenticate');
+	$this->metaftpd_devlog(3,'$username:'.$username,basename(__FILE__).':'.__LINE__,'T3Authenticate');
 	$auth=false;
 	
 	// We check password type 
@@ -72,14 +72,14 @@ function T3Authenticate($username,$password,$crypt="md5")
 	 
 	 $auth = $this->T3Identify($username, $checkPassword=true, $pass);
 	
-	$this->metaftpd_devlog(2,"T3Authenticate returns: {$auth}",basename(__FILE__).':'.__LINE__,'T3Authenticate');
+	$this->metaftpd_devlog(3,"T3Authenticate returns: {$auth}",basename(__FILE__).':'.__LINE__,'T3Authenticate');
 	
 	return $auth;  
 }
 
 function T3Identify($username, $checkPassword=false, $password=null)
 {
-	$this->metaftpd_devlog(2,"T3Identify:".$username,basename(__FILE__).':'.__LINE__,'T3Authenticate');
+	$this->metaftpd_devlog(3,"T3Identify:".$username,basename(__FILE__).':'.__LINE__,'T3Authenticate');
 	
 	// We check if BE User exists in TYPO3 DB, // What about FE Users ?
 	 $res=$this->CFG->T3DB->exec_SELECTquery
@@ -128,7 +128,7 @@ function T3Identify($username, $checkPassword=false, $password=null)
 				$FILEMOUNTS=$this->BEUSER->groupData['filemounts'];
 				$WEBMOUNTS=$this->BEUSER->groupData['webmounts'];
 	
-				$this->metaftpd_devlog(2,"user_uid: {$this->user_uid} , FILEMOUNTS: ".print_r($FILEMOUNTS,1).", WEBMOUNTS: {$WEBMOUNTS}",basename(__FILE__).':'.__LINE__,'T3Authenticate');
+				$this->metaftpd_devlog(3,"user_uid: {$this->user_uid} , FILEMOUNTS: ".print_r($FILEMOUNTS,1).", WEBMOUNTS: {$WEBMOUNTS}",basename(__FILE__).':'.__LINE__,'T3Authenticate');
 				
 				$T3EXTFILE=t3lib_div::makeInstance('t3lib_extFileFunctions');
 		 		$T3EXTFILE->init($FILEMOUNTS, $TYPO3_CONF_VARS['BE']['fileExtensions']); // CBY get it from connected user
@@ -145,7 +145,7 @@ function T3Identify($username, $checkPassword=false, $password=null)
 	} 
 	else 
 	{
-		$this->metaftpd_devlog(2,"T3Authenticate : auth failed with db",basename(__FILE__).':'.__LINE__,'T3Authenticate');
+		$this->metaftpd_devlog(3,"T3Authenticate : auth failed with db",basename(__FILE__).':'.__LINE__,'T3Authenticate');
 	}
 	return $auth;
 }
@@ -153,27 +153,27 @@ function T3Identify($username, $checkPassword=false, $password=null)
 // this function gets PID from directoryname
 	
 function T3GetPid($path) {
-		$this->metaftpd_devlog(4,"T3GetPid : $path",'meta_t3io');
+		$this->metaftpd_devlog(3,"T3GetPid : $path",'meta_t3io');
 		$pid=0;
 		$p1=strpos($path,t3prefix);
-		$this->metaftpd_devlog(4,"T3GetPid : p1 $p1",'meta_t3io');
+		$this->metaftpd_devlog(3,"T3GetPid : p1 $p1",'meta_t3io');
 		if ($p1!==false) {
 			$path2=str_replace(t3prefix,'',$path);
 			$p=strpos($path2,t3pidsep);
-			$this->metaftpd_devlog(4,"T3GetPid : path2  $path2 p $p",'meta_t3io');
+			$this->metaftpd_devlog(3,"T3GetPid : path2  $path2 p $p",'meta_t3io');
 		  if ($p!==false) {
 		  	$pid=intval(substr($path2,0,$p));
 			} 
 		}
 		
-		$this->metaftpd_devlog(4,"T3GetPid out: $pid",'meta_t3io');
+		$this->metaftpd_devlog(3,"T3GetPid out: $pid",'meta_t3io');
 		return $pid;
   }
   
 // this function gets UID from filename.
 
 function T3GetFileUid($path) {
-		$this->metaftpd_devlog(4,"T3GetFileUid : $path",'meta_t3io');
+		$this->metaftpd_devlog(3,"T3GetFileUid : $path",'meta_t3io');
 	  $patharr=explode('/',$path);
 	  $path=array_pop($patharr);
 		$p1=strpos($path,t3prefix);
@@ -186,7 +186,7 @@ function T3GetFileUid($path) {
 		  	$uid= intval(substr($path2,0,$p));
 			}
 		}		
- 		$this->metaftpd_devlog(4,"T3GetFileUid out: $uid",'meta_t3io');
+ 		$this->metaftpd_devlog(3,"T3GetFileUid out: $uid",'meta_t3io');
 		return $uid;
  }
 	
@@ -197,7 +197,7 @@ function T3GetFileUid($path) {
   */
  function isT3($path) 
  {
- 	$this->metaftpd_devlog(2,"($path)", __METHOD__);
+ 	$this->metaftpd_devlog(3,"($path)", __METHOD__);
  	
  	$path=trim($path);
  	
@@ -264,7 +264,7 @@ function T3GetFileUid($path) {
  		$ret['isAuthorized']=1;
  	}
  	
- 	$this->metaftpd_devlog(2,"return $ret",__METHOD__,get_defined_vars());
+ 	$this->metaftpd_devlog(3,"return $ret",__METHOD__,get_defined_vars());
  	
  	return $ret;
  }
@@ -301,7 +301,7 @@ function T3GetFileUid($path) {
 
 function T3IsFile($virtualpath) 
 {
-		$this->metaftpd_devlog('1',"($virtualpath)", __METHOD__ );
+		$this->metaftpd_devlog(3,"($virtualpath)", __METHOD__ );
 		
 		$virtualpath=$this->T3CleanFilePath($virtualpath); 
 		$virtualpath=str_replace($this->CFG->T3ROOTDIR,'',$virtualpath);
@@ -332,7 +332,7 @@ function T3IsFile($virtualpath)
 		if ($darr[1]==T3_FTPD_WWW_ROOT) 
 		{
 			$fileinfo['isWebmount']=1;			
-			$this->metaftpd_devlog('2',"isWebmount=1", __METHOD__ , get_defined_vars() );
+			$this->metaftpd_devlog(3,"isWebmount=1", __METHOD__ , get_defined_vars() );
 		  	
 			// PID of page
 			$fileinfo['pid']=$fileinfo['level']?$this->T3GetPid($fileinfo['rootline'][$fileinfo['level']-1]):0;
@@ -348,7 +348,7 @@ function T3IsFile($virtualpath)
 			}
 			
 			$res=$this->CFG->T3DB->exec_SELECTquery('tstamp,crdate','pages',"pid='".intval($fileinfo['pid'])."' and uid='".intval($fileinfo['uid'])."' ".$enable );
-			$this->metaftpd_devlog('2',"isWebmount=1", __METHOD__ , $this->CFG->T3DB->exec_SELECTquery('tstamp,crdate','pages',"pid='".intval($fileinfo['pid'])."' and uid='".intval($fileinfo['uid'])."' ".$enable ) );
+			$this->metaftpd_devlog(3,"isWebmount=1", __METHOD__ , $this->CFG->T3DB->exec_SELECTquery('tstamp,crdate','pages',"pid='".intval($fileinfo['pid'])."' and uid='".intval($fileinfo['uid'])."' ".$enable ) );
 			if ($res) 
 			{
 				while ($row=$this->CFG->T3DB->sql_fetch_assoc($res)) 
@@ -360,7 +360,7 @@ function T3IsFile($virtualpath)
 			} 
 			else 
 			{
-				$this->metaftpd_devlog('2',"empty resultset", __METHOD__ , get_defined_vars() );
+				$this->metaftpd_devlog(3,"empty resultset", __METHOD__ , get_defined_vars() );
 			}
 
 			// Conditions for page :
@@ -378,7 +378,7 @@ function T3IsFile($virtualpath)
 			{
 				$enable=$GLOBALS['TSFE']->sys_page->enableFields('tt_content',-1,array('fe_group'=>1));
 				
-				$this->metaftpd_devlog('2',"Line ".__LINE__, __METHOD__ , get_defined_vars() );
+				$this->metaftpd_devlog(3,"Line ".__LINE__, __METHOD__ , get_defined_vars() );
 				$res=$this->CFG->T3DB->exec_SELECTquery('uid,ctype,header,bodytext,tstamp,tx_metaftpd_ftpfile,date','tt_content',"pid='".intval($fileinfo['pid'])."' and uid='".intval($fileinfo['uid'])."' ".$enable );
 				if ($res) 
 				{
@@ -420,14 +420,14 @@ function T3IsFile($virtualpath)
 							if(file_exists($physicalpath))
 							{
 								$fileinfo['size']=filesize($physicalpath);
-								$this->metaftpd_devlog(2,"T3IsFile : path  $path : ".	$fileinfo['size'],'meta_t3io','T3IsFile');
+								$this->metaftpd_devlog(3,"T3IsFile : path  $path : ".	$fileinfo['size'],'meta_t3io','T3IsFile');
 								$fileinfo['cdate']=$this->T3FileCTimeI($physicalpath,$fileinfo);
 								$fileinfo['mdate']=$this->T3FileMTimeI($physicalpath,$fileinfo);;
 							}
 						}
 					}
 				} else {
-					$this->metaftpd_devlog('2',"empty resultset, line".__LINE__, __METHOD__ , get_defined_vars() );
+					$this->metaftpd_devlog(3,"empty resultset, line".__LINE__, __METHOD__ , get_defined_vars() );
 				}
 			}
 
@@ -454,7 +454,7 @@ function T3IsFile($virtualpath)
 			$fileinfo['isAuthorized']=0;
 		}
 		
-		$this->metaftpd_devlog('1',"return fileinfo", __METHOD__ , $fileinfo );
+		$this->metaftpd_devlog(3,"return fileinfo", __METHOD__ , $fileinfo );
 		
 		return $fileinfo;
 	}
@@ -462,10 +462,10 @@ function T3IsFile($virtualpath)
 //checks that two paths are identical (Webmounts if  Pids are equal and filenames differnet we give back false, filemounts we check that paths are not the same).
 //MMCBY
 function T3CheckFilePathRename($sourceinfo,$destinfo) {	  
-	  $this->metaftpd_devlog(2,"======= T3CheckFilePathRename:".serialize($sourceinfo). ' dest '.serialize($destinfo),'meta_t3io','COPY');
+	  $this->metaftpd_devlog(3,"======= T3CheckFilePathRename:".serialize($sourceinfo). ' dest '.serialize($destinfo),'meta_t3io','COPY');
 		if ($sourceinfo['isWebmount'] && $destinfo['isWebmount'] && $destinfo['uid']==$sourceinfo['uid'] && $destinfo['prm']!=$sourceinfo['prm']) $ret=false;
 		$ret=true;
-	  $this->metaftpd_devlog(2,"======= T3CheckFilePathRename ret: $ret",'meta_t3io','COPY');
+	  $this->metaftpd_devlog(3,"======= T3CheckFilePathRename ret: $ret",'meta_t3io','COPY');
 		return $ret;
 }
 
@@ -485,7 +485,7 @@ function T3MakeContentTitle($row,$forceT3=0,$forceheader='') {
 function T3ExtractPageTitle($uid,$filename) {
 	$prefix=t3prefix.$uid.t3pidsep;
 	$ret= str_replace($prefix,'',$filename); 
-	$this->metaftpd_devlog(2,"======= T3ExtractPageTitle $prefix ret: $ret",'meta_t3io','COPY');
+	$this->metaftpd_devlog(3,"======= T3ExtractPageTitle $prefix ret: $ret",'meta_t3io','COPY');
 	return $ret;
 }
 
@@ -494,7 +494,7 @@ function T3ExtractPageTitle($uid,$filename) {
 // We prepare upload here ...
 
 function T3IsFileUpload($path) {
-	$this->metaftpd_devlog(2,"======= T3IsFileUpload:".$path,'meta_t3io','T3IsFileUpload');
+	$this->metaftpd_devlog(3,"======= T3IsFileUpload:".$path,'meta_t3io','T3IsFileUpload');
 	$path=trim($path);
 	$path=str_replace($this->CFG->T3ROOTDIR,'',$path);
 	$path=str_replace($this->CFG->T3PHYSICALROOTDIR,'',$path);
@@ -533,7 +533,7 @@ function T3IsFileUpload($path) {
 			
 		$fileinfo['uid']=$fileinfo['level']?intval($this->T3GetFileUid($fileinfo['file'])):0;
 		$fileinfo['cmd']='insert';
-		$this->metaftpd_devlog(2,"======= T3IsFileUpload info .".serialize($fileinfo),'meta_t3io','T3IsFileUpload');
+		$this->metaftpd_devlog(3,"======= T3IsFileUpload info .".serialize($fileinfo),'meta_t3io','T3IsFileUpload');
 
 		$this->T3GetUidFromFileName($fileinfo,1);
 
@@ -561,7 +561,7 @@ function T3IsFileUpload($path) {
 			$fileinfo['isAuthorized']=(file_exists($fileinfo['filePath']) && filetype($fileinfo['filePath']) == "dir" && $this->T3FILE->checkPathAgainstMounts($fileinfo['filePath']));
 		}
 	}
-	$this->metaftpd_devlog(2,"======= T3IsFileUpload fin.",'meta_t3io','T3IsFileUpload');
+	$this->metaftpd_devlog(3,"======= T3IsFileUpload fin.",'meta_t3io','T3IsFileUpload');
 	return $fileinfo;
 }
 	
@@ -579,11 +579,11 @@ function T3GetUidFromFileName(&$fileinfo,$tt_content=0) {
 		$enable=$GLOBALS['TSFE']->sys_page->enableFields($table,-1,array('fe_group'=>1));
 		$searchtitle=basename($fileinfo['prm']);
 		$res=$this->CFG->T3DB->exec_SELECTquery('uid',$table,'pid='.intval($fileinfo['pid']).' AND '.$field.'=\''.$searchtitle.'\''.$enable );
-		$this->metaftpd_devlog(4,"T3GetUidFromFileName:".$this->CFG->T3DB->SELECTquery('*',$table,'pid='.intval($fileinfo['pid']).' AND '.$field.'=\''.$searchtitle.'\''.$enable ),'meta_t3io','T3GetUidFromFileName');
+		$this->metaftpd_devlog(3,"T3GetUidFromFileName:".$this->CFG->T3DB->SELECTquery('*',$table,'pid='.intval($fileinfo['pid']).' AND '.$field.'=\''.$searchtitle.'\''.$enable ),'meta_t3io','T3GetUidFromFileName');
 		if ($res) {
 			while ($row=$this->CFG->T3DB->sql_fetch_assoc($res)) {
 			 $fileinfo['uid']=$row['uid'];
-		   $this->metaftpd_devlog(2,"T3GetUidFromFileName row:".serialize($row),'meta_t3io','T3GetUidFromFileName');
+		   $this->metaftpd_devlog(3,"T3GetUidFromFileName row:".serialize($row),'meta_t3io','T3GetUidFromFileName');
 				break;
 			}
 		}
@@ -601,7 +601,7 @@ function T3GetCTypeFile(&$fileinfo) {
 	t3lib_div::loadTCA('tt_content');
 	
 	foreach($fileinfo as $key=>$val) $ress.=$key." : ".$val.chr(10);
-	$this->metaftpd_devlog(2,"====== T3GetCTypeFile:".$ress,'meta_t3io','T3GetCTypeFile');
+	$this->metaftpd_devlog(3,"====== T3GetCTypeFile:".$ress,'meta_t3io','T3GetCTypeFile');
 	
 	$contentDataArray['pid']=$fileinfo['pid'];
 	
@@ -627,7 +627,7 @@ function T3GetCTypeFile(&$fileinfo) {
 		if ($extConf['flex']) {
 			$flexArray=$this->T3MakeNewFlexFormArray($fileinfo,$contentDataArray,$extConf['flex.']);
 			$flexObj = t3lib_div :: makeInstance('t3lib_flexformtools');
-			$this->metaftpd_devlog(2,"Flex array  :".serialize($flexArray),'meta_t3io','T3GetCTypeFile');  		
+			$this->metaftpd_devlog(3,"Flex array  :".serialize($flexArray),'meta_t3io','T3GetCTypeFile');  		
 			$contentDataArray['pi_flexform'] = $flexObj->flexArray2Xml($flexArray, true);
 	  }
 	  
@@ -639,14 +639,14 @@ function T3GetCTypeFile(&$fileinfo) {
 			// checksize must be implemented here !
 			$uploaddir='';
 			if ($fieldCFG['uploadfolder']) {
-  			$this->metaftpd_devlog(2,"T3GetCTypeFile , fielddir: ".$fieldCFG['uploadfolder'],'meta_t3io','T3GetCTypeFile');
+  			$this->metaftpd_devlog(3,"T3GetCTypeFile , fielddir: ".$fieldCFG['uploadfolder'],'meta_t3io','T3GetCTypeFile');
   			$uploaddir=$this->CFG->T3PHYSICALROOTDIR.$fieldCFG['uploadfolder'].'/'.$fileinfo['pid'].'/';
 				// we create pid dir if it doesn't exist ...
   			
   			if (!is_dir($uploaddir)) {
   				$stat = mkdir($uploaddir, 0777);
       		if (!$stat) {
-  					$this->metaftpd_devlog(2,"!!! Error : T3FileFieldCopy, can't create ".$uploaddir,'meta_t3io');
+  					$this->metaftpd_devlog(3,"!!! Error : T3FileFieldCopy, can't create ".$uploaddir,'meta_t3io');
       		}
       	}
       }
@@ -660,16 +660,16 @@ function T3GetCTypeFile(&$fileinfo) {
       	$cmd=str_replace($key,$value,$cmd);
       }
 			//$cmd=sprintf($extConf['systemTransform'],$this->T3MakeFilePath($fileinfo['filepath']), $uploaddir, $charset);
-			$this->metaftpd_devlog(2,"cmd $cmd",'meta_t3io');
-			$this->metaftpd_devlog(2,"=== SYSTEM TRANSFORMATION :".$cmd,'meta_t3io','T3GetCTypeFile');  
-			//$this->metaftpd_devlog(4,'ufile : '.$this->T3MakeFilePath($fileinfo['ufile']),'meta_t3io','T3GetCTypeFile');
-			$this->metaftpd_devlog(2,'file:'.$this->T3GetFileName($fileinfo['ufile']),'meta_t3io','T3GetCTypeFile');
+			$this->metaftpd_devlog(3,"cmd $cmd",'meta_t3io');
+			$this->metaftpd_devlog(3,"=== SYSTEM TRANSFORMATION :".$cmd,'meta_t3io','T3GetCTypeFile');  
+			//$this->metaftpd_devlog(3,'ufile : '.$this->T3MakeFilePath($fileinfo['ufile']),'meta_t3io','T3GetCTypeFile');
+			$this->metaftpd_devlog(3,'file:'.$this->T3GetFileName($fileinfo['ufile']),'meta_t3io','T3GetCTypeFile');
 			$tab=array();
 			$r=exec($cmd,&$tab);
 			$data=implode($extConf['sep']?$extConf['sep']:'',$tab);
 			if (!$r && !$data) {
 			  $data="Erreur commande : $cmd , code retour : $r !";
-				$this->metaftpd_devlog(2,'Erreur cmd:'.$data,'meta_t3io','T3GetCTypeFile');
+				$this->metaftpd_devlog(3,'Erreur cmd:'.$data,'meta_t3io','T3GetCTypeFile');
 			} 
 			// Post data process
 			
@@ -679,9 +679,9 @@ function T3GetCTypeFile(&$fileinfo) {
 				$whatToReplaceWith=$replaceArray[1];
 				$whatToReplaceWith=str_replace('###UPLOADFOLDER###',$fieldCFG['uploadfolder'].'/'.$fileinfo['pid'].'/',$whatToReplaceWith);
 				$data=str_replace($whatToReplace,$whatToReplaceWith,$data);
-			  $this->metaftpd_devlog(2,"whatToReplace : $whatToReplace whatToReplaceWith $whatToReplaceWith",'meta_t3io');
+			  $this->metaftpd_devlog(3,"whatToReplace : $whatToReplace whatToReplaceWith $whatToReplaceWith",'meta_t3io');
 			}
-			$this->metaftpd_devlog(2,'strip:','meta_t3io','T3GetCTypeFile');
+			$this->metaftpd_devlog(3,'strip:','meta_t3io','T3GetCTypeFile');
 			$contentDataArray[$extConf['dataField']]= $this->T3StripComments($this->T3_strip_selected_tags($data,array('head','html','meta','HEAD','HTML','!DOCTYPE','!---')));
 		}
 		
@@ -733,18 +733,18 @@ function T3GetCTypeFile(&$fileinfo) {
 			}
 	    $this->T3FileFieldCopy($fileinfo,'tx_metaftpd_ftpfile',$contentDataArray);
 		}
-		$this->metaftpd_devlog(2,"=======FIN GET CTYPE :",'meta_t3io','T3GetCTypeFile');  
+		$this->metaftpd_devlog(3,"=======FIN GET CTYPE :",'meta_t3io','T3GetCTypeFile');  
 		return $contentDataArray;
 	}
 
 function T3MakeNewFlexFormArray($res,$row,$flexconf) {
 		if (!$flexconf['field']) {
-			   $this->metaftpd_devlog(2,'Erreur T3MakeNewFlexFormArray: no flexform field defined : '.serialize($flexconf),'meta_t3io');
+			   $this->metaftpd_devlog(3,'Erreur T3MakeNewFlexFormArray: no flexform field defined : '.serialize($flexconf),'meta_t3io');
  				 return false;
 	  }
 	  
 		$myconf=$GLOBALS['TCA']['tt_content']['columns'][$flexconf['field']]['config'];
-		$this->metaftpd_devlog(2,"My conf  :".serialize($myconf),'meta_t3io');  		
+		$this->metaftpd_devlog(3,"My conf  :".serialize($myconf),'meta_t3io');  		
     $$flexArray=array();
 		$flexDS=t3lib_BEfunc::getFlexFormDS($myconf,$row,'tt_content');
 		
@@ -773,10 +773,10 @@ function T3MakeNewFlexFormArray($res,$row,$flexconf) {
             		$lang = 'l'.$lKey;      // Separate language key
             		foreach($dataStruct['ROOT']['el'] as $el=>$val) {
           		$flexArray['data'][$sheet][$lang][$el]['v'.$lKey]='';
-  					//$this->metaftpd_devlog(2,"Datastruct array  flexArray[$sheet][$lang][$el] :".serialize($dataStruct),'meta_t3io');  		
+  					//$this->metaftpd_devlog(3,"Datastruct array  flexArray[$sheet][$lang][$el] :".serialize($dataStruct),'meta_t3io');  		
          	}
           } else {
-          					$this->metaftpd_devlog(2,'Error T3MakeEmptyFlexFormArray:'.$data,'meta_t3io');
+          					$this->metaftpd_devlog(3,'Error T3MakeEmptyFlexFormArray:'.$data,'meta_t3io');
  										return 'Data Structure ERROR: No ROOT element found for sheet "'.$sheet.'".';
  									}
         }
@@ -788,7 +788,7 @@ function T3MakeNewFlexFormArray($res,$row,$flexconf) {
  }
 
 function T3ClearPageCache($PID) {
-  //$this->metaftpd_devlog(2,'####  '.$this->BEUSER->isAdmin().' CLEAR PAGE CACHE ###### : '.$PID,'meta_t3io');
+  //$this->metaftpd_devlog(3,'####  '.$this->BEUSER->isAdmin().' CLEAR PAGE CACHE ###### : '.$PID,'meta_t3io');
 	$this->CFG->T3TCE->start(array(),array(),$this->BEUSER);
 	$this->CFG->T3TCE->clear_cache('pages',$PID);  
 }
@@ -796,7 +796,7 @@ function T3ClearPageCache($PID) {
 function T3ClearAllCache() {
 	$admin=$this->BEUSER->user['admin'];
 	$this->BEUSER->user['admin']=1;
-  //$this->metaftpd_devlog(2,'####  BE :  '.$this->BEUSER->isAdmin().' CLEAR PAGE CACHE ###### : '.$PID,'meta_t3io');
+  //$this->metaftpd_devlog(3,'####  BE :  '.$this->BEUSER->isAdmin().' CLEAR PAGE CACHE ###### : '.$PID,'meta_t3io');
 	$this->CFG->T3TCE->start(array(),array(),$this->BEUSER);
 	$this->CFG->T3TCE->clear_cacheCmd('pages');  
 	$this->BEUSER->user['admin']=$admin;
@@ -810,13 +810,16 @@ function metaftpd_devlog($level,$message,$classAndMethod,$data=array())
 	if (
 		in_array($level,$this->CFG->debuglevel) 
 		&& 
-		in_array($method,$this->CFG->debugfunction)
+		( 
+			in_array( $method,$this->CFG->debugfunction )
+			|| $level > 9
+		)
 	)  {
 		t3lib_div::devlog(
 			$message 	= $method.': '.$message,
 			$extension 	= '['.$level.']=>'.$class,
 			$severity 	= 1, // just for info
-			$data
+			$data		= ($level==10)?array():$data
 		);	
 	}
 }
@@ -834,7 +837,7 @@ function T3GetFileName($path) {
 function T3MakeVirtualPathFromPid($pid) {
 	$rootline=t3lib_BEfunc::BEgetRootLine($pid); 
 	//TO DO handle webmounts
-	$this->metaftpd_devlog(2,'T3MakeVirtualPathFromPid :'.serialize($rootline),'meta_t3io','T3MakeVirtualPathFromPid');
+	$this->metaftpd_devlog(3,'T3MakeVirtualPathFromPid :'.serialize($rootline),'meta_t3io','T3MakeVirtualPathFromPid');
 	$virtualpath=$this->CFG->T3ROOTDIR.T3_FTPD_WWW_ROOT;
 	foreach($rootline as $key=>$val) $virtualpath.="/".t3prefix.$key;
 	return $virtualpath;
@@ -846,16 +849,16 @@ function T3FuncCopy($cmds) {
 	$altName = $cmds['altName'];
 	if (!$theDest)	{			
 		$this->T3FILE->writelog(2,2,100,'Destination "%s" was not a directory',Array($cmds['target']));
-		$this->metaftpd_devlog(2,'Error : Destination was not a directory :'.$cmds['target'],'meta_t3io');
+		$this->metaftpd_devlog(3,'Error : Destination was not a directory :'.$cmds['target'],'meta_t3io');
 		return FALSE;
 	}
 	if (!$this->T3FILE->isPathValid($theFile) || !$this->T3FILE->isPathValid($theDest))	{
 		$this->T3FILE->writelog(2,2,101,'Target or destination had invalid path (".." and "//" is not allowed in path). T="%s", D="%s"',Array($theFile,$theDest));
-		$this->metaftpd_devlog(2,'Error : Target or destination had invalid path (".." and "//" is not allowed in path). T='.$theFile.', D='.$theDest,'meta_t3io');
+		$this->metaftpd_devlog(3,'Error : Target or destination had invalid path (".." and "//" is not allowed in path). T='.$theFile.', D='.$theDest,'meta_t3io');
 		return FALSE;
 	}
 	// Processing of file or directory.
-	$this->metaftpd_devlog(2,'**** '.$altName.' ******* T='.$theFile.', D='.$theDest,'meta_t3io');
+	$this->metaftpd_devlog(3,'**** '.$altName.' ******* T='.$theFile.', D='.$theDest,'meta_t3io');
 	if (@is_file($theFile))	{	// If we are copying a file...
 		if ($this->T3FILE->actionPerms['copyFile'])	{
 			if (filesize($theFile) < ($this->T3FILE->maxCopyFileSize*1024))	{
@@ -867,7 +870,7 @@ function T3FuncCopy($cmds) {
 					$theDestFile = $theDest.'/'.$fI['file'];
 				}
 		  		
-	  		$this->metaftpd_devlog(2,'*********** T='.$theFile.', D='.$theDestFile,'meta_t3io');
+	  		$this->metaftpd_devlog(3,'*********** T='.$theFile.', D='.$theDestFile,'meta_t3io');
 				//if ($theDestFile && !@file_exists($theDestFile))	{
 				
 				if ($theDestFile)	{
@@ -881,14 +884,14 @@ function T3FuncCopy($cmds) {
 						clearstatcache();
 						if (@is_file($theDestFile))	{
 							$this->T3FILE->writelog(2,0,1,'File "%s" copied to "%s"',Array($theFile,$theDestFile));
-							$this->metaftpd_devlog(2,'File : '.$theFile.', copied to '.$theDestFile,'meta_t3io');
+							$this->metaftpd_devlog(3,'File : '.$theFile.', copied to '.$theDestFile,'meta_t3io');
 							return $theDestFile;
 						} else {
 							$this->T3FILE->writelog(2,2,109,'File "%s" WAS NOT copied to "%s"! Write-permission problem?',Array($theFile,$theDestFile));
-						  $this->metaftpd_devlog(2,'!!! ERROR File : '.$theFile.', was not copied to '.$theDestFile,'meta_t3io');
+						  $this->metaftpd_devlog(3,'!!! ERROR File : '.$theFile.', was not copied to '.$theDestFile,'meta_t3io');
 						}
 					}
-				} else 	$this->metaftpd_devlog(2,'*********** File exists T='.$theFile.', D='.$theDestFile,'meta_t3io');
+				} else 	$this->metaftpd_devlog(3,'*********** File exists T='.$theFile.', D='.$theDestFile,'meta_t3io');
 			}
 		}
 	}
@@ -901,12 +904,12 @@ function T3FileFieldCopy($fileinfo,$field,&$contentDataArray) {
 	$cmds['data']=$this->T3CleanFilePath($this->CFG->T3PHYSICALROOTDIR.$fileinfo['filepath']);
 	$cmds['altName']=0;
 	if ($fileinfo['cmd']=='insert') $cmds['altName']=1;
-  $this->metaftpd_devlog(2,"====== T3FileFieldCopy , field: $field , fileinfo :".serialize($fileinfo),'meta_t3io','T3FileFieldCopy');
+  $this->metaftpd_devlog(3,"====== T3FileFieldCopy , field: $field , fileinfo :".serialize($fileinfo),'meta_t3io','T3FileFieldCopy');
 	if ($field) {
 		$fieldCFG = $GLOBALS['TCA']['tt_content']['columns'][$field]['config'];
 		// checksize must be implemented here !
 		if ($fieldCFG['uploadfolder']) {
-  		$this->metaftpd_devlog(2,"T3FileFieldCopy , fielddir: ".$fieldCFG['uploadfolder'],'meta_t3io','T3FileFieldCopy');
+  		$this->metaftpd_devlog(3,"T3FileFieldCopy , fielddir: ".$fieldCFG['uploadfolder'],'meta_t3io','T3FileFieldCopy');
   		if ($field!='tx_metaftpd_ftpfile') $dir=$this->T3CleanFilePath($this->CFG->T3PHYSICALROOTDIR.'/'.$fieldCFG['uploadfolder']);
   		  else {
   		  	$dir=$this->T3CleanFilePath($this->CFG->T3PHYSICALROOTDIR.'/'.$fieldCFG['uploadfolder'].'/'.$fileinfo['pid']);
@@ -915,7 +918,7 @@ function T3FileFieldCopy($fileinfo,$field,&$contentDataArray) {
   				if (!$direxists) {
   					$stat = mkdir($dir, 0777);
       			if (!$stat) {
-  						$this->metaftpd_devlog(2,"!!! Error : T3FileFieldCopy, can't create ".$dir,'meta_t3io');
+  						$this->metaftpd_devlog(3,"!!! Error : T3FileFieldCopy, can't create ".$dir,'meta_t3io');
       			}
       		}
    		  	/*$dir=$this->T3CleanFilePath($this->CFG->T3PHYSICALROOTDIR.'/'.$fieldCFG['uploadfolder'].'/'.$fileinfo['pid'].'/'.$fileinfo['uid']);
@@ -924,32 +927,32 @@ function T3FileFieldCopy($fileinfo,$field,&$contentDataArray) {
   				if (!$direxists) {
   					$stat = mkdir($dir, 0777);
       			if (!$stat) {
-  						$this->metaftpd_devlog(2,"!!! Error : T3FileFieldCopy, can't create ".$dir,'meta_t3io');
+  						$this->metaftpd_devlog(3,"!!! Error : T3FileFieldCopy, can't create ".$dir,'meta_t3io');
       			}
       		}*/
     	}
 			$cmds['target']=$dir;
 			$this->T3FILE->start($cmds);
-			$this->metaftpd_devlog(2,"T3FileFieldCopy:".$cmds['data'].' , '.$cmds['target'],'meta_t3io','T3FileFieldCopy');
+			$this->metaftpd_devlog(3,"T3FileFieldCopy:".$cmds['data'].' , '.$cmds['target'],'meta_t3io','T3FileFieldCopy');
 			$name=$this->T3FuncCopy($cmds);
 			if ($name) $contentDataArray[$field]=$this->T3GetFileName($name);
-			$this->metaftpd_devlog(2,"T3FileFieldCopy file : ".$contentDataArray[$field].", name :".$name,'meta_t3io','T3FileFieldCopy');
+			$this->metaftpd_devlog(3,"T3FileFieldCopy file : ".$contentDataArray[$field].", name :".$name,'meta_t3io','T3FileFieldCopy');
 		}
 	}		
-	$this->metaftpd_devlog(2,"======= T3FileFieldCopy end : ".$name,'meta_t3io','T3FileFieldCopy');
+	$this->metaftpd_devlog(3,"======= T3FileFieldCopy end : ".$name,'meta_t3io','T3FileFieldCopy');
 }
 
 function T3FlexFileCopy($fileinfo,&$flexDS,$flexconf,&$flexArray) {
-	$this->metaftpd_devlog(2,"========= T3FlexFileCopy Start , flex conf :".serialize($extConf['flex.']),'meta_t3io');  		
+	$this->metaftpd_devlog(3,"========= T3FlexFileCopy Start , flex conf :".serialize($extConf['flex.']),'meta_t3io');  		
 	$cmds=array();
 	$cmds['data']=$this->T3CleanFilePath($this->CFG->T3PHYSICALROOTDIR.$fileinfo['filepath']);
 	$cmds['altName']=0;
 	if ($fileinfo['cmd']='insert') $cmds['altName']=1;
 	$sheet=$flexconf['uploadFileSheet'];
 	$field=$flexconf['uploadFileField'];
-  $this->metaftpd_devlog(2,"T3FlexFileCopy , sheet : $sheet, field: $field",'meta_t3io');
+  $this->metaftpd_devlog(3,"T3FlexFileCopy , sheet : $sheet, field: $field",'meta_t3io');
 	if ($sheet && $field) {
-		$this->metaftpd_devlog(4,"T3FlexFileCopy field conf  :".serialize($flexDS['sheets'][$sheet]['ROOT']['el'][$field]),'meta_t3io');  		
+		$this->metaftpd_devlog(3,"T3FlexFileCopy field conf  :".serialize($flexDS['sheets'][$sheet]['ROOT']['el'][$field]),'meta_t3io');  		
 		$fieldCFG = $flexDS['sheets'][$sheet]['ROOT']['el'][$field]['TCEforms']['config'];
 		// checksize must be implemented here !
 		if ($fieldCFG['uploadfolder']) {
@@ -959,17 +962,17 @@ function T3FlexFileCopy($fileinfo,&$flexDS,$flexconf,&$flexArray) {
   		if (!$direxists) {
   			$stat = mkdir($dir, 0777);
       	if (!$stat) {
-  				$this->metaftpd_devlog(2,"!!! Error : T3FileFieldCopy, can't create ".$dir,'meta_t3io');
+  				$this->metaftpd_devlog(3,"!!! Error : T3FileFieldCopy, can't create ".$dir,'meta_t3io');
       	}
       }
       
- 		  $this->metaftpd_devlog(4,"T3FlexFileCopy , sheet : $sheet, field: $field",'meta_t3io');
+ 		  $this->metaftpd_devlog(3,"T3FlexFileCopy , sheet : $sheet, field: $field",'meta_t3io');
 			$cmds['target']=$dir;
 			$this->T3FILE->start($cmds);
-			$this->metaftpd_devlog(2,"T3FlexFileCopy:".$cmds['data'].' , '.$cmds['target'],'meta_t3io');
+			$this->metaftpd_devlog(3,"T3FlexFileCopy:".$cmds['data'].' , '.$cmds['target'],'meta_t3io');
 			$name=$this->T3FuncCopy($cmds);
 			if ($name) $flexArray['data'][$sheet]['lDEF'][$field]['vDEF']=$this->T3GetFileName($name);
-			$this->metaftpd_devlog(2,"T3FlexFileCopy name :".$name,'meta_t3io');
+			$this->metaftpd_devlog(3,"T3FlexFileCopy name :".$name,'meta_t3io');
 		}
 	}		
 }	
@@ -983,12 +986,12 @@ function T3FlexFileCopy($fileinfo,&$flexDS,$flexconf,&$flexArray) {
 
 
 function T3LinkFileUpload($fileinfo) {
-	$this->metaftpd_devlog(2,"====== T3LinkFileUpload:".serialize($fileinfo),'meta_t3io');
+	$this->metaftpd_devlog(3,"====== T3LinkFileUpload:".serialize($fileinfo),'meta_t3io');
 		
 	// We construct data array and make file copies
 		
 	$contentDataArray=$this->T3GetCTypeFile($fileinfo);
-	$this->metaftpd_devlog(4,"T3LinkFileUpload data:".serialize($contentDataArray),'meta_t3io');
+	$this->metaftpd_devlog(3,"T3LinkFileUpload data:".serialize($contentDataArray),'meta_t3io');
 	
 	// We insert or update info according to fileinfo array
 		
@@ -1003,7 +1006,7 @@ function T3LinkFileUpload($fileinfo) {
   // We clear page cache on modification
   
 	$this->T3ClearPageCache($fileinfo['pid']);
-	$this->metaftpd_devlog(2,"====== T3LinkFileUpload Fin.",'meta_t3io');
+	$this->metaftpd_devlog(3,"====== T3LinkFileUpload Fin.",'meta_t3io');
 	return $contentDataArray;
 }
 	
@@ -1013,7 +1016,7 @@ function T3GetFileMount($name)
 	$ret=array();
 	
 	$filemounts=$this->BEUSER->groupData['filemounts'];
-	$this->metaftpd_devlog(2,"=== T3GetFileMount start :".serialize($filemounts),__METHOD__, get_defined_vars() );
+	$this->metaftpd_devlog(3,"=== T3GetFileMount start :".serialize($filemounts),__METHOD__, get_defined_vars() );
 	
 	if(is_array($filemounts))
 	{
@@ -1022,12 +1025,12 @@ function T3GetFileMount($name)
 				$path=substr($fm['path'],strlen($this->CFG->T3PHYSICALROOTDIR));
 				$fm['relPath']=$path;
 				
-				$this->metaftpd_devlog(2,"=== T3GetFileMount end".serialize($fm),__METHOD__, get_defined_vars() );
+				$this->metaftpd_devlog(3,"=== T3GetFileMount end".serialize($fm),__METHOD__, get_defined_vars() );
 				return $fm;
 			}
 		}
 	}
-	$this->metaftpd_devlog(2,"=== T3GetFileMount end".serialize($ret),__METHOD__, get_defined_vars() );
+	$this->metaftpd_devlog(3,"=== T3GetFileMount end".serialize($ret),__METHOD__, get_defined_vars() );
 	return $ret;
 }
 	
@@ -1040,7 +1043,7 @@ function T3GetFileMount($name)
 
 function T3ReplaceMountPointsByPath($path) 
 {
-	$this->metaftpd_devlog('1',"($path)", __METHOD__ );
+	$this->metaftpd_devlog(3,"($path)", __METHOD__ );
 	
 	$ret = '';
 	
@@ -1051,7 +1054,7 @@ function T3ReplaceMountPointsByPath($path)
 	$path=$this->T3CleanFilePath($path);
 	$l2=strlen($path);
 	$rootflag=0;
-	$this->metaftpd_devlog('1',__LINE__.": we take out site root:".$path,__METHOD__ , get_defined_vars());
+	$this->metaftpd_devlog(3,__LINE__.": we take out site root:".$path,__METHOD__ , get_defined_vars());
 	
 	// we check if we must add root ...
 	if ($l2!=$l) $rootflag=1;
@@ -1061,7 +1064,7 @@ function T3ReplaceMountPointsByPath($path)
 	// ! relative path
 	if (substr($path, 0, 1) == "/" && $c >=3 ) 
 	{
-		$this->metaftpd_devlog('1',__LINE__.": abs path:".$path,__METHOD__ , get_defined_vars());
+		$this->metaftpd_devlog(3,__LINE__.": abs path:".$path,__METHOD__ , get_defined_vars());
 		
 		if ($parr[1]==T3_FTPD_FILE_ROOT) 
 		{
@@ -1070,24 +1073,24 @@ function T3ReplaceMountPointsByPath($path)
 			{
 				$rp=$fm['relPath'];
 				$ret=str_replace('/'.T3_FTPD_FILE_ROOT.'/'.$parr[2],$rp,$path);
-				$this->metaftpd_devlog('1',__LINE__.": count(%fm):".$path,__METHOD__ , get_defined_vars());
+				$this->metaftpd_devlog(3,__LINE__.": count(%fm):".$path,__METHOD__ , get_defined_vars());
 			} 
 			else 
 			{
-			  	$this->metaftpd_devlog('1',__LINE__.": ! count(%fm):".$path,__METHOD__ , get_defined_vars());				
+			  	$this->metaftpd_devlog(3,__LINE__.": ! count(%fm):".$path,__METHOD__ , get_defined_vars());				
 				$ret=str_replace(T3_FTPD_FILE_ROOT,'',$path);
 			}
 		} 
 		else 
 		{
-			$this->metaftpd_devlog(2,"====== T3ReplaceMountPointsByPath: no file root  path $path",__METHOD__ , get_defined_vars());
+			$this->metaftpd_devlog(3,"====== T3ReplaceMountPointsByPath: no file root  path $path",__METHOD__ , get_defined_vars());
 			$ret=$path;
 		}
 	} 
 	else 
 	{
 		// relative path
-		$this->metaftpd_devlog('1',__LINE__.": rel path:".$path,__METHOD__ , get_defined_vars());
+		$this->metaftpd_devlog(3,__LINE__.": rel path:".$path,__METHOD__ , get_defined_vars());
 		
 		if ($parr[1]==T3_FTPD_FILE_ROOT && $c >=2) 
 		{			
@@ -1106,17 +1109,17 @@ function T3ReplaceMountPointsByPath($path)
 		} 
 		else 
 		{
-			$this->metaftpd_devlog('1',__LINE__.": no file root:".$path,__METHOD__ , get_defined_vars());
+			$this->metaftpd_devlog(3,__LINE__.": no file root:".$path,__METHOD__ , get_defined_vars());
 			$ret=$path;
 		}
 	}
 	
-	$this->metaftpd_devlog(2,"rootflag : $rootflag : ret : $ret",__METHOD__ , get_defined_vars());
+	$this->metaftpd_devlog(3,"rootflag : $rootflag : ret : $ret",__METHOD__ , get_defined_vars());
 
 	if ($rootflag) $ret=$this->CFG->T3PHYSICALROOTDIR.(str_replace($this->CFG->T3PHYSICALROOTDIR,'',$ret));
 	$ret=$this->T3CleanFilePath($ret);
 	
-	$this->metaftpd_devlog(2,"return $ret",__METHOD__ , get_defined_vars());
+	$this->metaftpd_devlog(3,"return $ret",__METHOD__ , get_defined_vars());
 		
 	return $ret;
 }
@@ -1155,7 +1158,7 @@ function T3ReplacePathByMountPoints($path) {
  */
 function T3CleanFilePath($filepath)
 {
-	$this->metaftpd_devlog('1',"($filepath)", __METHOD__ );
+	$this->metaftpd_devlog(3,"($filepath)", __METHOD__ );
 	
 	$filepath=trim($filepath);
 
@@ -1170,7 +1173,7 @@ function T3CleanFilePath($filepath)
 		$filepath=str_replace('//','/',$filepath);
 	}
 	
-	$this->metaftpd_devlog('1',"return $filepath",__METHOD__, get_defined_vars());
+	$this->metaftpd_devlog(3,"return $filepath",__METHOD__, get_defined_vars());
 	
 	return $filepath;
 }
@@ -1186,7 +1189,7 @@ function T3CleanFilePath($filepath)
  */
 function T3MakeFilePath($virtualpath) 
 {
-	$this->metaftpd_devlog('1',"($virtualpath)",__METHOD__ );
+	$this->metaftpd_devlog(3,"($virtualpath)",__METHOD__ );
 	
 	$virtualpath=$this->T3CleanFilePath($virtualpath);
 
@@ -1212,10 +1215,13 @@ function T3MakeFilePath($virtualpath)
 	
 	$physicalpath=$this->T3CleanFilePath($physicalpath);
 	
-	$this->metaftpd_devlog('1',"====== T3MakeFilePath physicalpath before mount replace :".$physicalpath,__METHOD__);
+	$this->metaftpd_devlog(3,"====== T3MakeFilePath physicalpath before mount replace :".$physicalpath,__METHOD__);
 	$physicalpath=$this->T3CleanFilePath($this->T3ReplaceMountPointsByPath($physicalpath));
 	
-	$this->metaftpd_devlog('1',"return $physicalpath",__METHOD__, get_defined_vars() );
+	// 20110422: Filesnames containing spaces got encoded! 
+	$physicalpath = rawurldecode($physicalpath);
+	
+	$this->metaftpd_devlog(3,"return $physicalpath",__METHOD__, get_defined_vars() );
 	return $physicalpath;
 }
 
@@ -1223,11 +1229,11 @@ function T3MakeFilePath($virtualpath)
 // CHECKS $path is a valid path
 
 function T3FileExists($path) {
-	$this->metaftpd_devlog(5,"T3FileExists start:".$path,'meta_t3io','T3FileExists');
+	$this->metaftpd_devlog(3,"T3FileExists start:".$path,'meta_t3io','T3FileExists');
 	$ret=false;
 	$path=$this->T3CleanFilePath($path);
 	$fileinfo=$this->T3IsFile($path);
-	$this->metaftpd_devlog(2,"T3FileExists: fileinfo : ".serialize($fileinfo),'meta_t3io','T3FileExists');
+	$this->metaftpd_devlog(3,"T3FileExists: fileinfo : ".serialize($fileinfo),'meta_t3io','T3FileExists');
 
 	if ($fileinfo['isWebmount']) {
 		// If first level WEBMOUNT...
@@ -1241,15 +1247,15 @@ function T3FileExists($path) {
 		// Must add check  web mounts here !!!
 		if ($fileinfo['level']==2)	 {
 			$webmounts=$this->BEUSER->groupData['webmounts'];
-			$this->metaftpd_devlog(2,"============ T3FileExists webmounts :".$webmounts,'meta_t3io','T3FileExists');
+			$this->metaftpd_devlog(3,"============ T3FileExists webmounts :".$webmounts,'meta_t3io','T3FileExists');
 			//$parr[]=array();
 			if (strlen(trim($webmounts))>0) {
 				$pids=t3lib_div::trimexplode(',',$webmounts);
 				foreach($pids as $pid) {
-					$this->metaftpd_devlog(2,"============ T3FileExists webmounts pid:".$pid,'meta_t3io','T3FileExists');
+					$this->metaftpd_devlog(3,"============ T3FileExists webmounts pid:".$pid,'meta_t3io','T3FileExists');
 					//$parr[]=$this->CFG->T3PAGE->getPage($pid);
 					if ($pid==$fileinfo['uid'] && $fileinfo['pid']==0) {
-						$this->metaftpd_devlog(2,"T3FileExists path $path fp $filepath exit: true",'meta_t3io','T3FileExists');
+						$this->metaftpd_devlog(3,"T3FileExists path $path fp $filepath exit: true",'meta_t3io','T3FileExists');
 						return true;
 					}
 				}
@@ -1260,14 +1266,14 @@ function T3FileExists($path) {
 		$this->T3GetUidFromFileName($fileinfo);
 
 		$res=$this->CFG->T3DB->exec_SELECTquery('uid',$table,'pid='.intval($fileinfo['pid']).' AND uid='.intval($fileinfo['uid']).$enable );
-		$this->metaftpd_devlog(2,"T3FileExists:".$this->CFG->T3DB->SELECTquery('*',$table,'pid='.intval($fileinfo['pid']).' AND uid='.intval($fileinfo['uid']).$enable ),'meta_t3io');
+		$this->metaftpd_devlog(3,"T3FileExists:".$this->CFG->T3DB->SELECTquery('*',$table,'pid='.intval($fileinfo['pid']).' AND uid='.intval($fileinfo['uid']).$enable ),'meta_t3io');
 		if ($res) {
 			while ($row=$this->CFG->T3DB->sql_fetch_assoc($res)) {
 				$ret=true;
 				break;
 			}
 		} else {
-			$this->metaftpd_devlog(2,"T3FileExists: pb db","meta_t3io",'T3FileExists');
+			$this->metaftpd_devlog(3,"T3FileExists: pb db","meta_t3io",'T3FileExists');
 		}
 	}
 	else
@@ -1278,104 +1284,153 @@ function T3FileExists($path) {
 		$ret=file_exists($filepath);
 
 	}
-	$this->metaftpd_devlog(5,"T3FileExists end ; path $path fp $filepath exit:".$ret,'meta_t3io','T3FileExists');
+	$this->metaftpd_devlog(3,"T3FileExists end ; path $path fp $filepath exit:".$ret,'meta_t3io','T3FileExists');
 	return $ret;
 }
 
-// get creation time of path ressource
-// param 1 : virtualpath given by webdav browser
-// returns : ctime of ressource, if ressource is not valid returns 0...
-
-function T3FileCTime($virtualpath) {
-	$this->metaftpd_devlog(2,"============ T3FileCTime start: $T3FileCTime ",'meta_t3io','T3FileCTime');
+/**
+ * Gets the change time of a path ressource
+ * @param string $virtualpath given by webdav browser
+ * @return ctime of ressource, if ressource is not valid returns 0...
+ */
+function T3FileCTime( $virtualpath , $fileinfo = false) 
+{	
+	$this->metaftpd_devlog(3,"($virtualpath)",__METHOD__);
+	
 	$ctime=0;
-	$virtualpath=$this->T3CleanFilePath($virtualpath);
-	$fileinfo=$this->T3IsFile($virtualpath);
-  if ($fileinfo['isWebmount']) {
-		if (!$fileinfo['isT3File'] ) $ret=$fileinfo['pcdate'];
-		if ($fileinfo['isT3File'] && $fileinfo['isWebcontent']) $ctime=$fileinfo['cdate'];
+	
+	if(!$fileinfo)
+	{
+		$virtualpath=$this->T3CleanFilePath($virtualpath);
+		$fileinfo=$this->T3IsFile($virtualpath);
+	}
+  	
+	if ($fileinfo['isWebmount']) 
+  	{
+		if (!$fileinfo['isT3File'] ) 
+		{
+			$ctime=$fileinfo['pcdate'];
+  		}
+		elseif ( $fileinfo['isWebcontent'] ) 
+		{	
+			$ctime=$fileinfo['cdate'];
+		}
 
 	}
 	else
 	{
 		$ctime=filectime($this->T3MakeFilePath($virtualpath));
 	}
-	$this->metaftpd_devlog(2,"============ T3FileCTime end ctime : $ctime ",'meta_t3io','T3FileCTime');
+	
+	$this->metaftpd_devlog(3,"return: $ctime ",__METHOD__,get_defined_vars() );
 	return $ctime;
 }
 
-function T3FileCTimeI($virtualpath,$fileinfo) {
-	$this->metaftpd_devlog(2,"============ T3FileCTimeI start: $T3FileCTime ",'meta_t3io','T3FileCTime');
-	$ctime=0;
-  if ($fileinfo['isWebmount']) {
-		if (!$fileinfo['isT3File'] ) $ret=$fileinfo['pcdate'];
-		if ($fileinfo['isT3File'] && $fileinfo['isWebcontent']) $ctime=$fileinfo['cdate'];
 
-	}
-	else
+/**
+ * Enter description here ...
+ * @param string $virtualpath
+ * @param array $fileinfo
+ * @return Ambigous <unixtime, number>
+ */
+function T3FileCTimeI($virtualpath,$fileinfo) 
+{
+	$this->metaftpd_devlog(3,"($virtualpath)",__METHOD__);
+	
+	$ctime=$this->T3FileCTime( $virtualpath , $fileinfo );
+	
+	$this->metaftpd_devlog(3,"return: $ctime ",__METHOD__,get_defined_vars() );
+	return $ctime;
+}
+
+/**
+ * get the size of a path resource
+ * @param string $path
+ * @return number
+ */
+function T3FileSize($path, $fileinfo=false) 
+{
+	$this->metaftpd_devlog(3,"($path)",__METHOD__);
+	
+	$ret		= 0;
+	$path		= $this->T3CleanFilePath($path);
+	
+	if(!$fileinfo) 
 	{
-		$ctime=filectime($this->T3MakeFilePath($virtualpath));
+		$fileinfo	= $this->T3IsFile($path);
 	}
-	$this->metaftpd_devlog(2,"============ T3FileCTimeI end ctime : $ctime ",'meta_t3io','T3FileCTime');
-	return $ctime;
-}
-
-function T3FileSize($path) {
-	$this->metaftpd_devlog(2,"============ T3FileSize start: $path ",'meta_t3io','T3FileSize');
-  $ret=0;
-	$path=$this->T3CleanFilePath($path);
-	$fileinfo=$this->T3IsFile($path);
-  if ($fileinfo['isWebmount']) {
+	
+	if ($fileinfo['isWebmount']) 
+	{
 		if ($fileinfo['isT3File']) $ret=$fileinfo['size'];
-		$this->metaftpd_devlog(2,"============ T3FileSize start: $path : $ret ",'meta_t3io','T3FileSize');
 	}
 	else
 	{
 		$ret=filesize($this->T3MakeFilePath($path));
-		$this->metaftpd_devlog(2,"============ T3FileSize start: $path : $ret ",'meta_t3io','T3FileSize');
 	}
-	$this->metaftpd_devlog(2,"============ T3FileSize end: $ret ",'meta_t3io','T3FileSize');
+	
+	$this->metaftpd_devlog(3,"return: $ret ",__METHOD__,get_defined_vars() );
 	return $ret;
 }
 
-// get modifcation time of file ...
-
-function T3FileMTime($path) {
-	$this->metaftpd_devlog(2,"============ T3FileMTime start: $path ",'meta_t3io','T3FileMTime');
-	$ret=0;
-	$path=$this->T3CleanFilePath($path);
-	$fileinfo=$this->T3IsFile($path);
-  if ($fileinfo['isWebmount']) {
-		if (!$fileinfo['isT3File']) $ret=$fileinfo['pmdate'];
-		if ($fileinfo['isT3File'] && $fileinfo['isWebcontent']) $ret=$fileinfo['mdate'];
-	}
-	else
-	{
-		$ret=filemtime($this->T3MakeFilePath($path));
-	}
-	$this->metaftpd_devlog(2,"============ T3FileMTime end: $ret ",'meta_t3io','T3FileMTime');
-	return $ret;
-}
-
-function T3FileMTimeI($path,$fileinfo) {
-	$this->metaftpd_devlog(2,"============ T3FileMTimeI start: $path ",'meta_t3io','T3FileMTime');
-	$ret=0;
-  if ($fileinfo['isWebmount']) {
-		if (!$fileinfo['isT3File']) $ret=$fileinfo['pmdate'];
-		if ($fileinfo['isT3File'] && $fileinfo['isWebcontent']) $ret=$fileinfo['mdate'];
-	}
-	else
-	{
-		$ret=filemtime($this->T3MakeFilePath($path));
-	}
-	$this->metaftpd_devlog(2,"============ T3FileMTimeI end: $ret ",'meta_t3io','T3FileMTime');
-	return $ret;
-}
-
-
-function T3IsDir($path) 
+/**
+ * get modifcation time of file ...
+ * @param string $path
+ * @param array $fileinfo
+ * @return Ambigous <unixtime, number>
+ */
+function T3FileMTime($path, $fileinfo=false) 
 {
-	$this->metaftpd_devlog('1',"($path)", __METHOD__ );
+	$this->metaftpd_devlog(3,"($path)",__METHOD__ );
+	
+	$ret=0;
+	
+	if(!$fileinfo)
+	{
+		$path=$this->T3CleanFilePath($path);
+		$fileinfo=$this->T3IsFile($path);
+	}
+  	
+	if ($fileinfo['isWebmount']) 
+  	{
+		if (!$fileinfo['isT3File']) 
+		{
+			$ret=$fileinfo['pmdate'];
+		}
+		elseif ($fileinfo['isWebcontent']) 
+		{
+			$ret=$fileinfo['mdate'];
+		}
+	}
+	else
+	{
+		$ret=filemtime($this->T3MakeFilePath($path));
+	}
+	
+	$this->metaftpd_devlog(3,"return: $ret ",__METHOD__,get_defined_vars() );
+	return $ret;
+}
+
+/**
+ * Enter description here ...
+ * @param string $path
+ * @param array $fileinfo
+ * @return Ambigous <unixtime, number>
+ */
+function T3FileMTimeI($path,$fileinfo) 
+{
+	$this->metaftpd_devlog(3,"($path)",__METHOD__ );
+	
+	$ret=$this->T3FileMTime($path, $fileinfo);
+	
+	$this->metaftpd_devlog(3,"return: $ret ",__METHOD__,get_defined_vars() );
+	return $ret;
+}
+
+
+function T3IsDir($path, $fileinfo=false) 
+{
+	$this->metaftpd_devlog(3,"($path)", __METHOD__ );
 	
 	$ret=false;
 	
@@ -1383,7 +1438,11 @@ function T3IsDir($path)
 	
 	$path = $this->T3CleanFilePath($path);
 	
-	$fileinfo=$this->T3IsFile($path);
+	if(!$fileinfo)
+	{
+		$fileinfo=$this->T3IsFile($path);
+	}
+		
 	
 	if ($fileinfo['isWebmount']) 
 	{
@@ -1395,7 +1454,7 @@ function T3IsDir($path)
 		$ret = is_dir($this->T3MakeFilePath($path));
 	}
 	
-	$this->metaftpd_devlog('1'," return $ret", __METHOD__, get_defined_vars() );
+	$this->metaftpd_devlog(3," return $ret", __METHOD__, get_defined_vars() );
 	
 	return $ret;
 }
@@ -1406,12 +1465,12 @@ function T3IsDir($path)
  */
 function T3ListDir($path) 
 {
-	$this->metaftpd_devlog('1',"($path)", __METHOD__ );
+	$this->metaftpd_devlog(3,"($path)", __METHOD__ );
 	
 	$list=array();
 	
 	$fileinfo=$this->isT3($path);
-	$this->metaftpd_devlog('1',"fileinfo", __METHOD__, get_defined_vars() );
+	$this->metaftpd_devlog(3,"fileinfo", __METHOD__, get_defined_vars() );
 	
 	// Is Path a webmount ?			
 	if ($fileinfo['isWebmount']) 
@@ -1421,7 +1480,7 @@ function T3ListDir($path)
 		{
 			// Level one we get the webmounts
 			$webmounts=$this->BEUSER->groupData['webmounts'];
-			$this->metaftpd_devlog('1',"level==1 => webmounts for beuser", __METHOD__, get_defined_vars() );
+			$this->metaftpd_devlog(3,"level==1 => webmounts for beuser", __METHOD__, get_defined_vars() );
 			
 			//$parr[]=array();
 			if (strlen(trim($webmounts))>0) 
@@ -1429,7 +1488,7 @@ function T3ListDir($path)
 				$pids=t3lib_div::trimexplode(',',$webmounts);
 				foreach($pids as $pid) 
 				{
-					$this->metaftpd_devlog('1',"pid: $pid", __METHOD__, $pids );
+					$this->metaftpd_devlog(3,"pid: $pid", __METHOD__, $pids );
 					if ($pid==0) 
 					{
 						$parr[]=array('uid'=>0, 'title'=>'Root');
@@ -1446,12 +1505,12 @@ function T3ListDir($path)
 			// first we ask for page menu 
 			$pid=$fileinfo['pid'];
 			//$pid=$fileinfo['rootline'][$fileinfo['level']];
-			$this->metaftpd_devlog('1',"level!=1 => T3PAGE->getMenu($pid)", __METHOD__, get_defined_vars() );			
+			$this->metaftpd_devlog(3,"level!=1 => T3PAGE->getMenu($pid)", __METHOD__, get_defined_vars() );			
 			$parr=$this->CFG->T3PAGE->getMenu($pid);
 		}
 		
 		// T3 Pages
-		$this->metaftpd_devlog('1',"T3 Pages stored in: parr", __METHOD__, get_defined_vars() );
+		$this->metaftpd_devlog(3,"T3 Pages stored in: parr", __METHOD__, get_defined_vars() );
 		if (is_array($parr))
 		{
 			foreach($parr as $pid=>$row) 
@@ -1469,7 +1528,7 @@ function T3ListDir($path)
 		{
 			while ($row=$this->CFG->T3DB->sql_fetch_assoc($res)) 
 			{
-				$this->metaftpd_devlog('1',"tt_contents of page in: row", __METHOD__, get_defined_vars() );
+				$this->metaftpd_devlog(3,"tt_contents of page in: row", __METHOD__, get_defined_vars() );
 				$title=$this->T3MakeContentTitle($row);
 				$list[] = $title?$title:$this->T3MakeContentTitle($row,1,'[unknown]'); 
 				//$list[] = $row['tx_metaftpd_ftpfile'];				
@@ -1477,12 +1536,12 @@ function T3ListDir($path)
 		} 
 		else 
 		{
-			$this->metaftpd_devlog('1',"page without contents", __METHOD__, get_defined_vars() );
+			$this->metaftpd_devlog(3,"page without contents", __METHOD__, get_defined_vars() );
 		}
 	} 
 	else 
 	{
-		$this->metaftpd_devlog(2,"============ T3ListDir file mounts for: $path",__METHOD__, get_defined_vars() );
+		$this->metaftpd_devlog(3,"============ T3ListDir file mounts for: $path",__METHOD__, get_defined_vars() );
 		
 		// We handle File mounts here
 		if ($path=='/') 
@@ -1490,7 +1549,7 @@ function T3ListDir($path)
 			// We are at root of FTPD/WebDAV server. We present choice between filemounts and webmounts
 			$list[] = T3_FTPD_FILE_ROOT;
 			$list[] = T3_FTPD_WWW_ROOT;
-			$this->metaftpd_devlog(2,"============ T3ListDir level 1 :".serialize($list),__METHOD__, get_defined_vars() );
+			$this->metaftpd_devlog(3,"============ T3ListDir level 1 :".serialize($list),__METHOD__, get_defined_vars() );
 		} 
 		elseif (
 			
@@ -1501,28 +1560,28 @@ function T3ListDir($path)
 			$this->_slashify($path) == '/'.T3_FTPD_FILE_ROOT.'/'
 		) 
 		{
-			$this->metaftpd_devlog(2,'$this->BEUSER: '.print_r($this->BEUSER, 1),__METHOD__, get_defined_vars() );
+			$this->metaftpd_devlog(3,'$this->BEUSER: '.print_r($this->BEUSER, 1),__METHOD__, get_defined_vars() );
 			
 			$filemounts=$this->BEUSER->groupData['filemounts'];
-			$this->metaftpd_devlog(2,"============ T3ListDir filemounts 2:".serialize($filemounts),__METHOD__, get_defined_vars() );
+			$this->metaftpd_devlog(3,"============ T3ListDir filemounts 2:".serialize($filemounts),__METHOD__, get_defined_vars() );
 			foreach($filemounts as $fm) 
 			{
-				$this->metaftpd_devlog(2,"filemount :".$fm['name'],__METHOD__, get_defined_vars() );
+				$this->metaftpd_devlog(3,"filemount :".$fm['name'],__METHOD__, get_defined_vars() );
 				$filename=$this->CFG->T3ROOTDIR.substr($fm['path'],strlen($this->CFG->T3ROOTDIR));
 				$list[] = $fm['name'];
 			}
 		} 
 		else 
 		{
-			$this->metaftpd_devlog(2,"T3ListDir : path : $path",__METHOD__, get_defined_vars() );
+			$this->metaftpd_devlog(3,"T3ListDir : path : $path",__METHOD__, get_defined_vars() );
 			
 			$path=$this->T3ReplaceMountPointsByPath($path);
 			
-			$this->metaftpd_devlog(2,"T3ListDir : path : $path",__METHOD__, get_defined_vars() );
+			$this->metaftpd_devlog(3,"T3ListDir : path : $path",__METHOD__, get_defined_vars() );
 			
 			$dir=$this->CFG->T3PHYSICALROOTDIR . str_replace($this->CFG->T3PHYSICALROOTDIR,'',$path);
 			
-			$this->metaftpd_devlog(2,"T3ListDir : dir : $dir",__METHOD__, get_defined_vars() );
+			$this->metaftpd_devlog(3,"T3ListDir : dir : $dir",__METHOD__, get_defined_vars() );
 			
 			if ($handle = @opendir($dir))
 			{
@@ -1532,18 +1591,18 @@ function T3ListDir($path)
 					$list[] = $file;
 				}
 				
-				if (!$handle)	$this->metaftpd_devlog(2,"T3ListDir erreur 1 ***********:".$path,__METHOD__, get_defined_vars() );
+				if (!$handle)	$this->metaftpd_devlog(3,"T3ListDir erreur 1 ***********:".$path,__METHOD__, get_defined_vars() );
 				
 				closedir($handle);
 			} 
 			else 
 			{
-				$this->metaftpd_devlog(2,"T3ListDir erreur 2 ************ :".$path,__METHOD__, get_defined_vars() );
+				$this->metaftpd_devlog(3,"T3ListDir erreur 2 ************ :".$path,__METHOD__, get_defined_vars() );
 				return false;
 			}
 		}			
 	}
-	$this->metaftpd_devlog(2,"T3ListDir fin:".$path." list:".serialize($list),__METHOD__, get_defined_vars() );
+	$this->metaftpd_devlog(3,"T3ListDir fin:".$path." list:".serialize($list),__METHOD__, get_defined_vars() );
 	return $list;	
  }
 

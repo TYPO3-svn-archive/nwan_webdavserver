@@ -82,9 +82,7 @@ $TYPO3_DB->debugOutput = $TYPO3_CONF_VARS['SYS']['sqlDebug'];
 /*******************************************************************************
  * Create $TSFE object (TSFE = TypoScript Front End)
  ******************************************************************************/
-$temp_TSFEclassName = t3lib_div::makeInstanceClassName('tslib_fe');
-$TSFE = new $temp_TSFEclassName
-(
+$TSFE = t3lib_div::makeInstance('tslib_fe',
 	$TYPO3_CONF_VARS,
 	t3lib_div::_GP('id'),
 	t3lib_div::_GP('type'),
@@ -178,16 +176,23 @@ $CFG->dbpass 			= TYPO3_db_password;
 $CFG->dbhost 			= TYPO3_db_host;
 $CFG->dbname 			= TYPO3_db;
 $CFG->dbtype			= "mysql";
-$CFG->debuglevel		= array('1');
+$CFG->debuglevel		= array(-30);
 $CFG->debugfunction		= array(
 //	'T3ListDir', 
 //	'T3ReplaceMountPointsByPath', 
 //	'isT3', 
-//	'T3MakeFilePath', 
-	'T3IsDir', 
+	'T3MakeFilePath', 
+//	'T3IsDir', 
 //	'T3GetFileMount',
-	'serve',
-	'processURL'
+//	'serve',
+//	'processURL',
+//	'T3FileSize',
+//	'createResource',
+//	'authorize',
+//	'getContentTreeCollection',
+//	'getCollectionMembers',
+	'fetchNodeInfo',
+	'T3FileSize',
 );
 $CFG->T3PAGE			= $TYPO3_PAGE;
 $CFG->T3DB				= $TYPO3_DB;

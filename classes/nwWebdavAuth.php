@@ -1,14 +1,57 @@
 <?php
 
 class nwWebdavAuth extends ezcWebdavDigestAuthenticatorBase
-implements ezcWebdavAuthorizer
+implements ezcWebdavLockAuthorizer
 {
 	protected $properties = array(
 		'CFG' => null
 	);
 	protected $credentials = array();
+	protected $tokens;
+	protected $tokensStorageFile;
 	
-	function __construct(){}
+	public function __construct($tokensStorageFile=null)
+	{
+		$this->tokensStorageFile = $tokensStorageFile;
+		$this->tokens = array();
+		if(file_exists($this->tokensStorageFile))
+		{
+			$this->tokens = include $this->tokensStorageFile;
+		}
+	}
+	
+	public function __destruct()
+	{
+		if(
+			$this->tokens !== array()
+//			&& file_exists($this->tokensStorageFile)
+		)
+		{
+			file_put_contents(
+				$this->tokensStorageFile,
+				"<?php\n\nreturn ".var_export($this->tokens, true).";\n\n?>"
+			);
+		}
+	}
+	
+	public function assignLock( $user, $lockToken )
+    {
+        if ( !isset( $this->tokens[$user] ) )
+        {
+            $this->tokens[$user] = array();
+        }
+        $this->tokens[$user][$lockToken] = true;
+    }
+    
+    public function ownsLock( $user, $lockToken )
+    {
+        return ( isset( $this->tokens[$user][$lockToken] ) );
+    }
+    
+    public function releaseLock( $user, $lockToken )
+    {
+        unset( $this->tokens[$user][$lockToken] );
+    }
 	
 	public function __get($propertyName)
 	{
@@ -118,7 +161,7 @@ implements ezcWebdavAuthorizer
 		// ezcWebdav fetches authorisation for every path-segment,
 		// but we did this already while building the initial content-tree
 		// TODO: fetch fine grained rights from typo3 (read, write, list etc)
-		$this->CFG->t3io->metaftpd_devlog(5,print_r(array($user, $path, $access),1),basename(__FILE__).':'.__LINE__,'T3Authenticate');
+		$this->CFG->t3io->metaftpd_devlog(4,"($user, $path, $access)",__METHOD__,get_defined_vars());
 		return true;
 	}
 	
