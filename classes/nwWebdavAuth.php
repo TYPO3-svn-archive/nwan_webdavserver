@@ -101,31 +101,30 @@ implements ezcWebdavLockAuthorizer
 
 	public function authenticateBasic( ezcWebdavBasicAuth $data )
 	{
-		$this->CFG->t3io->metaftpd_devlog(1,print_r($data,1),basename(__FILE__).':'.__LINE__,'ServeRequest');
-		
 		$username = $data->username;
 		$password = $data->password;
 
 		if($auth=$this->CFG->t3io->T3Authenticate($username,$password)){
 			
 			$this->credentials[$username] = $password;
+		
+			$this->CFG->t3io->metaftpd_devlog(100,"return true",__METHOD__, get_defined_vars() );
+		
 			return true;
 		}
+		
+		$this->CFG->t3io->metaftpd_devlog(100,"return false",__METHOD__, get_defined_vars() );
 		
 		return false;
 	}
 
 	public function authenticateDigest( ezcWebdavDigestAuth $data )
 	{
-		$this->CFG->t3io->metaftpd_devlog(1,print_r($data,1),basename(__FILE__).':'.__LINE__,'ServeRequest');
-		
 		$username = $data->username;
-		
-		$this->CFG->t3io->metaftpd_devlog(1,print_r($data,1),basename(__FILE__).':'.__LINE__,'ServeRequest');
 		
 		$test_t3BeUser = $this->CFG->T3DB->exec_SELECTgetRows('be_users.password','be_users',"be_users.username='$username'", '', '',1);
 		
-		$this->CFG->t3io->metaftpd_devlog(1,print_r($test_t3BeUser,1),basename(__FILE__).':'.__LINE__,'ServeRequest');
+		$this->CFG->t3io->metaftpd_devlog(100,"entry",__METHOD__, get_defined_vars() );
 		
 		if(count($test_t3BeUser))
 		{
@@ -136,10 +135,10 @@ implements ezcWebdavLockAuthorizer
 			$this->credentials[$username] = $test_t3BeUser[0]['password'];
 		}
 		
-		$this->CFG->t3io->metaftpd_devlog(1,print_r($this->credentials,1),basename(__FILE__).':'.__LINE__,'ServeRequest');
-
 		if ( !isset( $this->credentials[$username] ) )
 		{
+			$this->CFG->t3io->metaftpd_devlog(100,"return false",__METHOD__, get_defined_vars() );
+			
 			return false;
 		}
 		
@@ -149,8 +148,12 @@ implements ezcWebdavLockAuthorizer
 			
 			$this->CFG->t3io->T3Identify($username);
 			
+			$this->CFG->t3io->metaftpd_devlog(100,"return true",__METHOD__, get_defined_vars() );
+			
 			return true;
 		}
+		
+		$this->CFG->t3io->metaftpd_devlog(100,"exit false",__METHOD__, get_defined_vars() );
 		
 		return false;
 		

@@ -638,7 +638,7 @@ implements ezcWebdavLockBackend
     	$virtualFilePath = $t3io->T3CleanFilePath($path);
     	$virtualFilePath=$t3io->T3MakeFilePath($virtualFilePath);
 
-    	$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['meta_ftpd']['natural_file_names'] = true;
+    	$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['nwan_webdavserver']['natural_file_names'] = true;
     	$info=$t3io->T3IsFileUpload($path);
 
     	if ($info['isWebmount'])

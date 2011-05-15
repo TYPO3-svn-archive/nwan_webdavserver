@@ -1,0 +1,4 @@
+# cat=webdav; type=string; label=WebDAV Realm, used for Digest authentication
+realm = ezComponents WebDAV Server
+# cat=webdav; type=boolean; label=Natural File Names. If this is set file names will be that of uploaded files instead of T3-UID-TITLE
+natural_file_names = 0

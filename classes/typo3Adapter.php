@@ -253,8 +253,8 @@ class typo3Adapter {
 		$this->T3DB				= $TYPO3_DB;
 		$this->T3TCE			= $TYPO3_TCE;
 		$this->TSFE				= $TSFE;
-		$this->text['file']		= t3lib_extMgm::extPath('meta_ftpd').'nanoftpd/users';
-		$this->rootdir 			= t3lib_extMgm::extPath('meta_ftpd').'nanoftpd';
+		$this->text['file']		= t3lib_extMgm::extPath('nwan_webdavserver').'nanoftpd/users';
+		$this->rootdir 			= t3lib_extMgm::extPath('nwan_webdavserver').'nanoftpd';
 		$this->T3PHYSICALROOTDIR = PATH_site;
 		$this->T3ROOTDIR 		= PATH_site.$this->WEBDAVPREFIX;
 		$this->libdir 			= "$this->rootdir/lib";

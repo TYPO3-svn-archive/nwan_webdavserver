@@ -991,7 +991,8 @@ implements ezcWebdavLockBackend
 
                 if ( is_array( $data ) )
                 {
-                    foreach ($data as $k => $singleNodeInfo)
+                    $this->CFG->t3io->metaftpd_devlog(11,"( $path )",__METHOD__, get_defined_vars() );
+                	foreach ($data as $k => $singleNodeInfo)
                     {
                     	$pathOfNode = $singleNodeInfo['href'];
                     	if ($pathOfNode && !$this->cachedProperties[$pathOfNode])
@@ -999,10 +1000,20 @@ implements ezcWebdavLockBackend
                     		$this->cachedProperties[$pathOfNode] = $singleNodeInfo;
                     	}                    		
                     }
-                	$data = $data[0];
+                    // TODO: get the proper info from data-array 
+                    $nodeID = count(explode(DS, $fullPath))-3;
+                    if($nodeID < 0) $nodeID = 0;
+//                	if($data[0]) 
+//                	{
+//                		$data['name'] = end(explode(DS, $this->CFG->t3io->_unslashify($fullPath)));
+//                    	$data['nodeExists'] = true;
+//                    	$data['isCollection'] = ( $data['mimetype'] === self::DIRECTORY_MIMETYPE );
+//                    	$data['href'] = $fullPath;
+//                	}
+					$data = $data[$nodeID];
                     $data['nodeExists'] = true;
                     $data['isCollection'] = ( $data['mimetype'] === self::DIRECTORY_MIMETYPE );
-                    $data['href'] = $fullPath; // @as @todo move this hack to correct function
+                	
                 }
                 else
                 {

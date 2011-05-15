@@ -75,18 +75,30 @@ class nwWebdavServer {
 		$this->nwBackend = new nwWebdavBackend($this->CFG, $this->nwTokensStorage);
 
 		// init typo3 user, use for vfs-setup
+		$this->CFG->t3io->metaftpd_devlog(100,"_SERVER",__METHOD__, $_SERVER );
 		// TODO: create t3User-Class, use ezcCache to store userdetails 
 		if($_SERVER['PHP_AUTH_DIGEST'])
 		{
-			preg_match('/username="([^"]*)"/', $_SERVER['PHP_AUTH_DIGEST'], $match_username);
-			$this->CFG->t3io->metaftpd_devlog(5,'$match_username:'.print_r($match_username, true) ,basename(__FILE__).':'.__LINE__,"ServeRequest");
+			if(stripos($_SERVER['PHP_AUTH_DIGEST'], 'username=')!==false)
+			{
+				preg_match('/username="([^"]*)"/', $_SERVER['PHP_AUTH_DIGEST'], $match_username);
+				$username = $match_username[1];
+			}	
+			else
+			{
+				$username = $_SERVER['PHP_AUTH_DIGEST'];
+			}
 			
-			$username = $match_username[1];
+			$this->CFG->t3io->metaftpd_devlog(100,"PHP_AUTH_DIGEST",__METHOD__, get_defined_vars() );
 		}
 		else 
 		{
 			$username = $_SERVER['PHP_AUTH_USER'];
+			
+			$this->CFG->t3io->metaftpd_devlog(100,"PHP_AUTH_USER",__METHOD__, get_defined_vars() );
 		}
+		
+		$this->CFG->t3io->metaftpd_devlog(100,"before T3Identify".__LINE__,__METHOD__, get_defined_vars() );
 		$this->CFG->t3io->T3Identify($username);
 		
 		$this->t3CurrDir = array();	
