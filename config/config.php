@@ -13,6 +13,48 @@ if (!defined('PATH_t3lib'))
 { 
 	define('PATH_t3lib', PATH_site.'t3lib/');
 }
+
+/*******************************************************************************
+ * make extension indepenendent of "meta_ftpd",
+ * preserve some global defined functions from nano-ftpd
+ ******************************************************************************/
+function db_connect($dbhost, $dbname, $dbuser, $dbpass) {
+
+	global $CFG, $DB_DIE_ON_FAIL, $DB_DEBUG;
+
+	if (! $dbh = @mysql_connect($dbhost, $dbuser, $dbpass)) {
+		if ($DB_DEBUG) {
+			$CFG->log->write("MySQL: Can't connect to $dbhost as $dbuser\n");
+			$CFG->log->write("MySQL: Error: ", mysql_error() . "\n");
+		} else {
+			$CFG->log->write("MySQL: Database error encountered\n");
+		}
+
+		if ($DB_DIE_ON_FAIL) {
+			$CFG->log->write("MySQL: This script cannot continue, terminating.\n");
+			die();
+		}
+	}
+
+	$selection = mysql_select_db($dbname, $dbh);
+
+	if (! $selection) {
+		if ($DB_DEBUG) {
+			echo "Can't select database $dbname";
+			echo "MySQL Error: ", mysql_error();
+		} else {
+			echo "Database error encountered";
+		}
+
+		if ($DB_DIE_ON_FAIL) {
+			echo "This script cannot continue, terminating.";
+			die();
+		}
+	}
+
+	return $dbh;
+}
+
 /*******************************************************************************
  * Mandatory libraries included
  ******************************************************************************/
@@ -176,12 +218,12 @@ $CFG->dbpass 			= TYPO3_db_password;
 $CFG->dbhost 			= TYPO3_db_host;
 $CFG->dbname 			= TYPO3_db;
 $CFG->dbtype			= "mysql";
-$CFG->debuglevel		= array(-30);
+$CFG->debuglevel		= array(-300);
 $CFG->debugfunction		= array(
-//	'T3ListDir', 
+	'T3ListDir', 
 //	'T3ReplaceMountPointsByPath', 
 //	'isT3', 
-	'T3MakeFilePath', 
+//	'T3MakeFilePath', 
 //	'T3IsDir', 
 //	'T3GetFileMount',
 //	'serve',
@@ -191,8 +233,10 @@ $CFG->debugfunction		= array(
 //	'authorize',
 //	'getContentTreeCollection',
 //	'getCollectionMembers',
-	'fetchNodeInfo',
-	'T3FileSize',
+//	'fetchNodeInfo',
+//	'T3FileSize',
+//	'createCollection',
+//	'T3GetPid',
 );
 $CFG->T3PAGE			= $TYPO3_PAGE;
 $CFG->T3DB				= $TYPO3_DB;
@@ -205,10 +249,10 @@ $CFG->table['password']	= "password";
 $CFG->table['uid']		= "uid";
 $CFG->table['gid']		= "usergroup";
 $CFG->text				= array();
-$CFG->text['file']		= t3lib_extMgm::extPath('meta_ftpd').'nanoftpd/users';
+$CFG->text['file']		= t3lib_extMgm::extPath('nwan_webdavserver').'nanoftpd/users';
 $CFG->text['sep']		= ":";
 $CFG->crypt				= "md5";
-$CFG->rootdir 			= t3lib_extMgm::extPath('meta_ftpd').'nanoftpd';
+$CFG->rootdir 			= t3lib_extMgm::extPath('nwan_webdavserver').'nanoftpd';
 $CFG->WEBDAVPREFIX 		= 'webdav';
 $CFG->T3PHYSICALROOTDIR = PATH_site;
 $CFG->T3ROOTDIR 		= PATH_site.$CFG->WEBDAVPREFIX;
@@ -216,20 +260,20 @@ $CFG->T3UPLOADDIR		= "/uploads/tx_metaftpd/";
 $CFG->libdir 			= "$CFG->rootdir/lib";
 $CFG->moddir 			= "$CFG->rootdir/modules";
 $CFG->io				= "file";
-$CFG->server_name 		= "TYPO3 FTPd server [Metaphore Multimedia]";
+$CFG->server_name 		= "ezComponents WebDAV server [Netzweberei]";
 $CFG->dynip				= array();
 $CFG->dynip['on']		= 0;
 $CFG->dynip['iface']	= "ppp0";
 $CFG->logging 			= new object;
 $CFG->logging->mode		= 1;
 $CFG->logging->file		= "$CFG->rootdir/log/nanoftpd.log";
-require($CFG->libdir."/db_".$CFG->dbtype.".php");
-require("$CFG->libdir/pool.php");
-require("$CFG->libdir/auth.php");
-require("$CFG->libdir/log.php");
+//require($CFG->libdir."/db_".$CFG->dbtype.".php");
+//require("$CFG->libdir/pool.php");
+//require("$CFG->libdir/auth.php");
+//require("$CFG->libdir/log.php");
 require_once 'classes'.DS.'class.tx_metaftpd_t3io.php';
-$CFG->pasv_pool 		= new pool();
-$CFG->log 				= new log($CFG);
+//$CFG->pasv_pool 		= new pool();
+//$CFG->log 				= new log($CFG);
 if ($CFG->dbtype != "text")
 { 
 	$CFG->dblink = db_connect($CFG->dbhost, $CFG->dbname, $CFG->dbuser, $CFG->dbpass);
