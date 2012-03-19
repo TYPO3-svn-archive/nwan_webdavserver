@@ -1,4 +1,6 @@
 <?php
+ini_set('memory_limit', '256M');
+
 define('TYPO3_OS', stristr(PHP_OS,'win') && !stristr(PHP_OS,'darwin')?'WIN':'');
 define('TYPO3_MODE', 'BE');
 define('TYPO3_mainDir', 'typo3/');
@@ -218,9 +220,9 @@ $CFG->dbpass 			= TYPO3_db_password;
 $CFG->dbhost 			= TYPO3_db_host;
 $CFG->dbname 			= TYPO3_db;
 $CFG->dbtype			= "mysql";
-$CFG->debuglevel		= array(-300);
+$CFG->debuglevel		= array(315);
 $CFG->debugfunction		= array(
-	'T3ListDir', 
+//	'T3ListDir', 
 //	'T3ReplaceMountPointsByPath', 
 //	'isT3', 
 //	'T3MakeFilePath', 
@@ -237,6 +239,7 @@ $CFG->debugfunction		= array(
 //	'T3FileSize',
 //	'createCollection',
 //	'T3GetPid',
+	'performDelete',
 );
 $CFG->T3PAGE			= $TYPO3_PAGE;
 $CFG->T3DB				= $TYPO3_DB;
@@ -248,25 +251,25 @@ $CFG->table['username']	= "username";
 $CFG->table['password']	= "password";
 $CFG->table['uid']		= "uid";
 $CFG->table['gid']		= "usergroup";
-$CFG->text				= array();
-$CFG->text['file']		= t3lib_extMgm::extPath('nwan_webdavserver').'nanoftpd/users';
-$CFG->text['sep']		= ":";
+//$CFG->text				= array();
+//$CFG->text['file']		= t3lib_extMgm::extPath('nwan_webdavserver').'nanoftpd/users';
+//$CFG->text['sep']		= ":";
 $CFG->crypt				= "md5";
-$CFG->rootdir 			= t3lib_extMgm::extPath('nwan_webdavserver').'nanoftpd';
-$CFG->WEBDAVPREFIX 		= 'webdav';
+//$CFG->rootdir 			= t3lib_extMgm::extPath('nwan_webdavserver').'nanoftpd';
+//$CFG->WEBDAVPREFIX 		= 'webdav';
 $CFG->T3PHYSICALROOTDIR = PATH_site;
-$CFG->T3ROOTDIR 		= PATH_site.$CFG->WEBDAVPREFIX;
-$CFG->T3UPLOADDIR		= "/uploads/tx_metaftpd/";
-$CFG->libdir 			= "$CFG->rootdir/lib";
-$CFG->moddir 			= "$CFG->rootdir/modules";
-$CFG->io				= "file";
-$CFG->server_name 		= "ezComponents WebDAV server [Netzweberei]";
-$CFG->dynip				= array();
-$CFG->dynip['on']		= 0;
-$CFG->dynip['iface']	= "ppp0";
-$CFG->logging 			= new object;
-$CFG->logging->mode		= 1;
-$CFG->logging->file		= "$CFG->rootdir/log/nanoftpd.log";
+//$CFG->T3ROOTDIR 		= PATH_site.$CFG->WEBDAVPREFIX;
+$CFG->T3UPLOADDIR		= "/uploads/tx_nwanwebdavserver/";
+//$CFG->libdir 			= "$CFG->rootdir/lib";
+//$CFG->moddir 			= "$CFG->rootdir/modules";
+//$CFG->io				= "file";
+//$CFG->server_name 		= "ezComponents WebDAV server [Netzweberei]";
+//$CFG->dynip				= array();
+//$CFG->dynip['on']		= 0;
+//$CFG->dynip['iface']	= "ppp0";
+//$CFG->logging 			= new object;
+//$CFG->logging->mode		= 1;
+//$CFG->logging->file		= "$CFG->rootdir/log/nanoftpd.log";
 //require($CFG->libdir."/db_".$CFG->dbtype.".php");
 //require("$CFG->libdir/pool.php");
 //require("$CFG->libdir/auth.php");

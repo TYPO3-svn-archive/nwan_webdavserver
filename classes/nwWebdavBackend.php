@@ -223,17 +223,158 @@ implements ezcWebdavLockBackend
         $this->CFG->t3io->metaftpd_devlog(10,"( $path )",__METHOD__, get_defined_vars() );
     }
     
+	/**
+     * Return an initial set of properties for resources and collections.
+     *
+     * The second parameter indicates wheather the given resource is a
+     * collection. The returned properties are used to initialize the property
+     * arrays for the given content.
+     * 
+     * @param string $name
+     * @param bool $isCollection
+     * @return array
+     *
+     * @access protected
+     */
+	public function initializeProperties( $name, $isCollection = false )
+    {
+        if ( $this->fakeLiveProperties )
+        {
+            $propertyStorage = new ezcWebdavBasicPropertyStorage();
+            
+            if( !$isCollection ) 
+            {
+            	$isCollection = $this->CFG->t3io->T3IsDir($name);	
+            }
+            
+            if( $isCollection ) 
+            {
+            	$name = $this->CFG->t3io->_slashify($name);
+            }
+			
+            // Add default creation date
+            $ctime = ($ctime = $this->CFG->t3io->T3FileCTime($name)) ? 
+            	$ctime :
+            	'0000000001';
+            	
+            $propertyStorage->attach(
+                new ezcWebdavCreationDateProperty( new ezcWebdavDateTime( '@'.$ctime ) )
+            );
+
+            // Define default display name
+            $propertyStorage->attach(
+                new ezcWebdavDisplayNameProperty( basename( urldecode( $name ) ) )
+            );
+
+            // Define default language
+            $propertyStorage->attach(
+                new ezcWebdavGetContentLanguageProperty( array( 'en' ) )
+            );
+
+            // Define default content type
+            $propertyStorage->attach(
+                new ezcWebdavGetContentTypeProperty( 
+                    $isCollection ? 'httpd/unix-directory' : 'application/octet-stream'
+                )
+            );
+
+            // Define default ETag
+            $propertyStorage->attach(
+                new ezcWebdavGetEtagProperty( $this->getETag( $name ) )
+            );
+
+            // Define default modification time
+            $mtime = ($mtime = (int) $this->CFG->t3io->T3FileMTime($name)) ? 
+            	$mtime :
+	            '0000000001';
+            	
+            $propertyStorage->attach(
+                new ezcWebdavGetLastModifiedProperty( new ezcWebdavDateTime( '@'.$mtime ) )
+            );
+
+            // Define content length if node is a resource.
+            $propertyStorage->attach(
+                new ezcWebdavGetContentLengthProperty(
+                    $isCollection ?
+                        ezcWebdavGetContentLengthProperty::COLLECTION :
+                        (string) $this->CFG->t3io->T3FileSize($name)
+       			)
+            );
+
+            $propertyStorage->attach(
+                new ezcWebdavResourceTypeProperty(
+                    ( $isCollection === true ? 
+                        ezcWebdavResourceTypeProperty::TYPE_COLLECTION : 
+                        ezcWebdavResourceTypeProperty::TYPE_RESOURCE
+                    )
+                )
+            );
+        }
+        else
+        {
+            $propertyStorage = new ezcWebdavBasicPropertyStorage();
+        }
+
+        return $propertyStorage;
+    }
+    
     /**
      * Create a new collection.
      *
      * Creates a new collection at the given $path.
      * 
      * @param string $path 
-     * @return void
+     * @return bool
      */
     protected function createCollection( $path )
     {
-    	$this->CFG->t3io->metaftpd_devlog(10,"( $path )",__METHOD__, get_defined_vars() );
+    	$t3io=$this->CFG->t3io;
+    	$path=$t3io->T3CleanFilePath($path);
+    	
+    	$parent = $this->splitLastPathElement( $path, $name );
+    	
+		$info=$t3io->T3IsFile($path);
+    	
+    	$t3io->metaftpd_devlog(300,"( $path )",__METHOD__, get_defined_vars() );
+    	
+    	if ($info['isWebmount']) 
+		{	
+			$parent = dirname($path);
+			$name   = basename($path);
+
+			$page['pid']=$info['pid'];
+			$page['title']=$name;
+			$this->CFG->T3DB->exec_INSERTquery('pages',$page);
+			$t3io->T3ClearPageCache($page['pid']);
+			$t3io->T3ClearAllCache();
+			
+			$storage = $this->getPropertyStoragePath( $path . '/foo' );
+			
+			$t3io->metaftpd_devlog(300,"( $path )",__METHOD__, get_defined_vars() );
+			
+			return true;
+		}
+		else // path points into FILEMOUNT
+		{
+			$path=$t3io->T3MakeFilePath($path);
+			$path=$t3io->T3CleanFilePath($path);
+			
+			$parent = dirname($path);
+			$name   = basename($path);
+			
+			if($stat = mkdir($parent."/".$name, 0777))
+			{
+				$storage = $this->getPropertyStoragePath( $path . '/foo' );
+				
+				$t3io->metaftpd_devlog(300,"( $path )",__METHOD__, get_defined_vars() );
+				
+				return true;
+			}
+			
+		}
+		
+    	return false;
+    	
     }
 
     /**
@@ -249,6 +390,57 @@ implements ezcWebdavLockBackend
     protected function createResource( $path, $content = null )
     {
     	$this->CFG->t3io->metaftpd_devlog(10,"( $path )",__METHOD__, get_defined_vars() );
+    	
+    	$t3io=$this->CFG->t3io;
+    	
+    	$virtualFilePath = $t3io->T3CleanFilePath($path);
+
+    	// We have a conflict if filename is identical to dir name ..
+    	if (!@$t3io->T3IsDir(dirname($virtualFilePath)))
+    	{
+    		$t3io->metaftpd_devlog(2,"PUT START 409 Conflict", __METHOD__, get_defined_vars() );
+    	}
+
+    	$virtualFilePath=$t3io->T3MakeFilePath($virtualFilePath);
+    	$info=$t3io->T3IsFileUpload($path);
+    	 
+    	if ($info['isWebmount'])
+    	{
+    		// Web mount
+    		$info['ufile']=$virtualFilePath;
+    		$t3io->metaftpd_devlog(2,"PUT Info", __METHOD__, get_defined_vars() );
+    			
+    		// in update mode we update directly tx_metaftpd_ftpfile ... (No copy)
+    		// we can integrate versionning here later ...
+    		$physicalFilePath=$t3io->T3CleanFilePath($this->CFG->T3PHYSICALROOTDIR.$info['filepath']);
+    		$t3io->metaftpd_devlog(2,"PUT $physicalFilePath", __METHOD__, get_defined_vars() );
+    			
+    		file_put_contents($physicalFilePath,$content);
+    			
+    		$t3io->T3LinkFileUpload($info);
+    			
+    		//unlink($physicalFilePath);
+
+    		// Set initial metadata for collection
+    		//$this->properties[$path] = $this->initializeProperties( $path, false );
+
+    	}
+    	else
+    	{
+    			
+    		// File Mount:
+    		//$this->options = new ezcWebdavFileBackendOptions();
+    		$physicalFilePath=$virtualFilePath;
+    			
+    		file_put_contents($physicalFilePath,$content);
+    		chmod( $physicalFilePath, 0755 );
+
+    		// This automatically creates the property storage if missing
+    		//$storage = $this->getPropertyStoragePath( $path );
+    	}
+
+        // This automatically creates the property storage
+        $storage = $this->getPropertyStoragePath( $path );
     }
 
     /**
@@ -264,6 +456,45 @@ implements ezcWebdavLockBackend
     protected function setResourceContents( $path, $content )
     {
     	$this->CFG->t3io->metaftpd_devlog(10,"( $path )",__METHOD__, get_defined_vars() );
+    	
+    	// File Mount:
+    	$t3io=$this->CFG->t3io;
+
+    	$virtualFilePath = $t3io->T3CleanFilePath($path);
+    	$virtualFilePath=$t3io->T3MakeFilePath($virtualFilePath);
+
+    	$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['nwan_webdavserver']['natural_file_names'] = true;
+    	$info=$t3io->T3IsFileUpload($path);
+
+    	if ($info['isWebmount'])
+    	{
+    		// Web mount
+    		$info['ufile']=$virtualFilePath;
+    		$t3io->metaftpd_devlog(6,"PUT info : ".serialize($info),"meta_webdav","PUT");
+    			
+    		// in update mode we update directly tx_metaftpd_ftpfile ... (No copy)
+    		// we can integrate versionning here later ...
+    		$physicalFilePath=$t3io->T3CleanFilePath($this->CFG->T3PHYSICALROOTDIR.$info['filepath']);
+    		$t3io->metaftpd_devlog(6,"PUT physicalFilePath : ".$physicalFilePath,"meta_webdav","PUT");
+    			
+    		file_put_contents($physicalFilePath,$content);
+    			
+    		$t3io->T3LinkFileUpload($info);
+    			
+    		unlink($physicalFilePath);
+
+    		// Set initial metadata for collection
+    		$this->properties[$path] = $this->initializeProperties( $path, false );
+
+    	}
+    	else
+    	{
+    		$physicalFilePath=$virtualFilePath;
+    		 
+    		file_put_contents( $physicalFilePath, $content );
+    		 
+    		chmod( $physicalFilePath, 0755 );
+    	}
     }
 
     /**
@@ -277,6 +508,59 @@ implements ezcWebdavLockBackend
     protected function getResourceContents( $path )
     {
     	$this->CFG->t3io->metaftpd_devlog(10,"( $path )",__METHOD__, get_defined_vars() );
+    	
+    	$t3io=$this->CFG->t3io;
+
+    	// get absolute fs path to requested resource
+    	$virtualpath = $t3io->T3CleanFilePath($path);
+
+//    	// sanity check
+//    	if (!$t3io->T3FileExists($path)) 
+//    	{
+//    		return false;
+//    	}
+    		
+//    	// is this a collection?
+//    	if ($t3io->T3IsDir($virtualpath)) 
+//    	{
+//    		return $this->Getdir($virtualpath, $options);
+//    	}
+
+//    	// detect resource type
+//    	$options['mimetype'] = $this->_mimetype($virtualpath);
+
+//    	// detect modification time
+//    	// see rfc2518, section 13.7
+//    	// some clients seem to treat this as a reverse rule
+//    	// requiering a Last-Modified header if the getlastmodified header was set
+//    	$options['mtime'] = $t3io->T3FileMTime($virtualpath);
+
+//    	// detect resource size
+//    	$options['size'] = $t3io->T3FileSize($virtualpath);
+
+    	// no need to check result here, it is handled by the base class
+    	$info=$t3io->T3IsFile($virtualpath);
+//    	$GLOBALS['data']=$info['data'];
+
+    	if ($info['isWebmount']) 
+    	{
+    		// If file was uploaded through metaftpd we link to it
+    		if ($info['tx_metaftpd_ftpfile']) 
+    		{
+    			$streamPath=$t3io->T3MakeFilePath('/uploads/tx_nwanwebdavserver/'.$info['tx_nwanwebdavserver_file']);
+    			return file_get_contents($streamPath);
+    		} 
+    		else 
+    		{
+    			// otherwise we open bodytext data
+    			return $info['data'];
+    		}
+    	} 
+    	else 
+    	{
+    		$streamPath=$t3io->T3MakeFilePath($virtualpath);
+    		return file_get_contents($streamPath);
+    	}
     }
 
 
@@ -378,7 +662,8 @@ implements ezcWebdavLockBackend
 
         if ( !isset( $this->cachedProperties[$path] ) )
         {
-            $this->cachedProperties[$path] = $this->getNodeInfo( $path );
+            	// TODO: fetch dead properties only
+        	$this->cachedProperties[$path] = $this->getNodeInfo( $path );
         }
 
         $item = $this->cachedProperties[$path];
@@ -404,7 +689,7 @@ implements ezcWebdavLockBackend
                 $timestamp = isset( $item['mtime'] ) ? 
                 	$item['mtime']: 
                 	time();
-                $property->date = new ezcWebdavDateTime( '@' . $timestamp );
+                $property->date = new ezcWebdavDateTime( '@' .$timestamp );
                 break;
 
             case 'creationdate':
@@ -537,7 +822,81 @@ implements ezcWebdavLockBackend
      */
     protected function performDelete( $path )
     {
-    	$this->CFG->t3io->metaftpd_devlog(10,"( $path )",__METHOD__, get_defined_vars() );
+    	$this->CFG->t3io->metaftpd_devlog(310,"( $path )",__METHOD__, get_defined_vars() );
+    	
+    	$t3io=$this->CFG->t3io;
+    	$info=$t3io->T3IsFile($path);
+    	// TODO: check, probably we dont need to call T3CleanFilePath!
+    	$path =$t3io->T3CleanFilePath($path);
+
+    	/*
+    	// Check if any errors would occur during deletion process
+    	$error = array();
+    	foreach ( $this->content as $name => $content )
+    	{
+    		if ( strpos( $name, $path ) === 0 && ( substr( $name, strlen( $path ), 1 ) === '/' || $name === $path ) )
+    		{
+    			// Check if we want to cause some errors here.
+    			if ( $this->options->failingOperations & ezcWebdavMemoryBackendOptions::REQUEST_DELETE && preg_match( $this->options->failForRegexp, $name ) > 0 )
+    			{
+    				$error[] = new ezcWebdavErrorResponse(
+    				ezcWebdavResponse::STATUS_423,
+    				$name
+    				);
+    			}
+    		}
+    	}
+    	*/
+
+    	if ($info['isWebmount']) 
+    	{
+    		$arr=array('deleted'=>'1');
+    		if (!$info['isWebcontent']) $this->CFG->T3DB->exec_UPDATEquery('pages',"uid='".$info['uid']."'",$arr);
+    		if ($info['isWebcontent']) $this->CFG->T3DB->exec_UPDATEquery('tt_content',"uid='".$info['uid']."'",$arr);
+    		$t3io->T3ClearPageCache($info['pid']);
+    		$t3io->T3ClearAllCache();
+    	} 
+    	else 
+    	{
+    		$this->CFG->t3io->metaftpd_devlog(310,"( $path )",__METHOD__, get_defined_vars() );
+    		
+    		// File mount
+    		if (!$t3io->T3FileExists($path)) 
+    		{
+    			$error[] = new ezcWebdavErrorResponse(
+    				ezcWebdavResponse::STATUS_404,
+    				$name
+    			);
+    		}
+    		
+    		$path=$t3io->T3MakeFilePath($path);
+    		
+    		$this->CFG->t3io->metaftpd_devlog(310,print_r($path,true),__METHOD__, get_defined_vars() );
+
+    		if ($t3io->T3IsDir($path)) 
+    		{
+    			$this->CFG->T3DB->exec_DELETEquery('tx_metaftpd_webdav_properties',"path LIKE '".$this->CFG->t3io->_slashify($path)."%'");
+    			
+    			// we allow deletion only in specified directories ...
+    			if (strpos($path, $this->CFG->T3PHYSICALROOTDIR.'litmus')!==false || strpos($path, $this->CFG->T3PHYSICALROOTDIR.'fileadmin')!==false || strpos($path, $this->CFG->T3PHYSICALROOTDIR.'uploads/tx_metaftpd')!==false) 
+    			{
+//    				$this->CFG->t3io->metaftpd_devlog(310,"System::rm(-rf $path)",__METHOD__, get_defined_vars() );
+//    				System::rm("-rf $path");
+
+    				$escapedpath = escapeshellcmd($path);
+    				
+    				system ("rm -Rf \"$escapedpath\"") ;
+    			}
+    		} 
+    		else 
+    		{
+    			$this->CFG->t3io->metaftpd_devlog(310,"unlink($path)",__METHOD__, get_defined_vars() );
+    			unlink($path);
+    		}
+    		$this->CFG->T3DB->exec_DELETEquery('tx_metaftpd_webdav_properties',"path = '$path'");
+    	}
+
+    	return null;
     }
 
     /**
@@ -550,12 +909,14 @@ implements ezcWebdavLockBackend
      */
     protected function nodeExists( $path )
     {
-    	$this->CFG->t3io->metaftpd_devlog(10,"( $path )",__METHOD__, get_defined_vars() );
+    	$this->CFG->t3io->metaftpd_devlog(1000,"( $path )",__METHOD__, get_defined_vars() );
     	
     	if ( !isset( $this->cachedNodes[$path] ) )
         {
             $this->cachedNodes[$path] = $this->getNodeInfo( $path );
         }
+        
+        $this->CFG->t3io->metaftpd_devlog(310,"( $path )",__METHOD__, get_defined_vars() );
     	
     	return $this->cachedNodes[$path]['nodeExists'];
     }
@@ -819,6 +1180,8 @@ implements ezcWebdavLockBackend
      */
     public function makeCollection( ezcWebdavMakeCollectionRequest $request )
     {
+    	$this->CFG->t3io->metaftpd_devlog(300,"( ezcWebdavMakeCollectionRequest )",__METHOD__, $_SERVER );
+    	
         $this->acquireLock();
         $return = parent::makeCollection( $request );
         $this->freeLock();
@@ -902,6 +1265,35 @@ implements ezcWebdavLockBackend
     	
     	return $contents;
     }
+    
+	/**
+     * Returns the storage path for a property.
+     *
+     * Returns the file systems path where properties are stored for the
+     * resource identified by $path. This depends on the name of the resource.
+     * 
+     * @param string $path 
+     * @return string
+     */
+    protected function getPropertyStoragePath( $path )
+    {
+        if($path == '/') $path .= 'root';
+    	
+    	// Get storage path for properties depending on the type of the
+        // resource.
+        $storagePath = realpath( dirname( $this->tokensStorageFile ) ) 
+            . DS . $this->propertyStoragePath . DS
+            . basename( $path ) . '.xml';
+
+        // Create property storage if it does not exist yet
+        if ( !is_dir( dirname( $storagePath ) ) )
+        {
+            mkdir( dirname( $storagePath ), $this->directoryMode );
+        }
+
+        // Append name of namespace to property storage path
+        return $storagePath;
+    }
 
     /**
      * Returns the property storage for a resource.
@@ -937,7 +1329,8 @@ implements ezcWebdavLockBackend
     {
         $path = ( $source === null ) ? $requestUri : $source;
         
-        $this->CFG->t3io->metaftpd_devlog(10,"( $path )",__METHOD__, get_defined_vars() );
+        
+//        if(stripos($path, 'Neuer')!==false) $this->CFG->t3io->metaftpd_devlog(300,__LINE__,__METHOD__, $_SERVER );
         
         // hidden files and dirs
         if($this->checkIfDeniedNode(basename($path))) 
@@ -985,13 +1378,15 @@ implements ezcWebdavLockBackend
                 }
                 else
                 {
-                	$this->CFG->t3io->metaftpd_devlog(13,"( $path )",__METHOD__, get_defined_vars() );
+                	$this->CFG->t3io->metaftpd_devlog(13,__LINE__,__METHOD__, get_defined_vars() );
+                	
                     $data = $this->getCollectionContent( $fullPath, 0, array() );
                 }
 
-                if ( is_array( $data ) )
+                if ( is_array( $data ) && count( $data ) )
                 {
-                    $this->CFG->t3io->metaftpd_devlog(11,"( $path )",__METHOD__, get_defined_vars() );
+                    $this->CFG->t3io->metaftpd_devlog(310,__LINE__,__METHOD__, get_defined_vars() );
+                    
                 	foreach ($data as $k => $singleNodeInfo)
                     {
                     	$pathOfNode = $singleNodeInfo['href'];
@@ -1010,21 +1405,23 @@ implements ezcWebdavLockBackend
 //                    	$data['isCollection'] = ( $data['mimetype'] === self::DIRECTORY_MIMETYPE );
 //                    	$data['href'] = $fullPath;
 //                	}
+
 					$data = $data[$nodeID];
-                    $data['nodeExists'] = true;
+                    $data['nodeExists'] = ( $data['ctime'] ) ? true : false;
+                    //$data['nodeExists'] = true;
                     $data['isCollection'] = ( $data['mimetype'] === self::DIRECTORY_MIMETYPE );
                 	
                 }
                 else
                 {
-                    $data = array();
-                    $data['nodeExists'] = false;
+                	$data = array();
                     $data['isCollection'] = false;
+                    $data['nodeExists'] = $this->CFG->t3io->T3FileExists($path);
                 }
             }
         }
         
-        $this->CFG->t3io->metaftpd_devlog(11,"( $path )",__METHOD__, get_defined_vars() );
+        $this->CFG->t3io->metaftpd_devlog(315,__LINE__,__METHOD__, get_defined_vars() );
     	
     	return $data;
     }
@@ -1168,7 +1565,7 @@ implements ezcWebdavLockBackend
         $collection = $this->splitFirstPathElement( $collection, $currentVirtualFolder );
         $content = $this->getVirtualFolderCollection( $currentVirtualFolder, $collection, $fullPath, $depth, $properties );
         
-        $this->CFG->t3io->metaftpd_devlog(13,"( $path )",__METHOD__, get_defined_vars() );
+        $this->CFG->t3io->metaftpd_devlog(310,"( $path )",__METHOD__, get_defined_vars() );
 
         return $content;
     }
@@ -1223,7 +1620,7 @@ implements ezcWebdavLockBackend
 		
 		$this->CFG->t3io->metaftpd_devlog(15,"passed 1 + 2" ,__METHOD__, get_defined_vars() );
 		
-		if( true || substr($fullPath, -1) == DS) // current node is a dir
+		if( substr($fullPath, -1) == DS) // current node is a dir
 		{		
 			// get curr dir's contents
 			$_currDirContents = $this->CFG->t3io->T3ListDir($fullPath);
@@ -1234,7 +1631,8 @@ implements ezcWebdavLockBackend
 				//turn every leaf into a collection
 				foreach($_currDirContents as $_node )
 				{	
-					$this->CFG->t3io->metaftpd_devlog(15,'foreach($_currDirContents as $_node )' ,__METHOD__, get_defined_vars());
+					$this->CFG->t3io->metaftpd_devlog(16,'foreach($_currDirContents as $_node )' ,__METHOD__, get_defined_vars());
+					
 					$rawnodes[$this->nodeEncode($_node)] = $this->CFG->t3io->T3IsDir($fullPath.$_node) ? array() : $this->nodeEncode($_node);
 				}
 			}
@@ -1300,6 +1698,45 @@ implements ezcWebdavLockBackend
         {
             $element = substr( $path, 0, $pos );
             $path = substr( $path, $pos + 1 );
+        }
+        return $path;
+    }
+    
+	/**
+     * Takes the last path element from \a $path and removes it from
+     * the path, the extracted part will be placed in \a $name.
+     *
+     * <code>
+     * $path = '/path/to/item/';
+     * $newPath = self::splitLastPathElement( $path, $root );
+     * print( $root ); // prints 'item', $newPath is now '/path/to'
+     * $newPath = self::splitLastPathElement( $newPath, $second );
+     * print( $second ); // prints 'to', $newPath is now '/path'
+     * $newPath = self::splitLastPathElement( $newPath, $third );
+     * print( $third ); // prints 'path', $newPath is now ''
+     * </code>
+     * @param string $path A path of elements delimited by a slash, if the path ends with a slash it will be removed
+     * @param string &$element The name of the first path element without any slashes
+     * @return string The rest of the path without the ending slash
+     * @todo remove or replace
+     */
+    protected function splitLastPathElement( $path, &$element )
+    {
+        $len = strlen( $path );
+        if ( $len > 0 and $path[$len - 1] === '/' )
+        {
+            $path = substr( $path, 0, $len - 1 );
+        }
+        $pos = strrpos( $path, '/' );
+        if ( $pos === false )
+        {
+            $element = $path;
+            $path = '';
+        }
+        else
+        {
+            $element = substr( $path, $pos + 1 );
+            $path = substr( $path, 0, $pos );
         }
         return $path;
     }
@@ -1388,4 +1825,10 @@ implements ezcWebdavLockBackend
     	}
     	return false;
     }
+    
+//    public function performRequest( ezcWebdavRequest $request )
+//    {
+//    	$this->CFG->t3io->metaftpd_devlog(300,"( )",__METHOD__, $_SERVER['REQUEST_METHOD']);
+//    	parent::performRequest( $request );
+//    }
 }
